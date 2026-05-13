@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck,Loader2 } from 'lucide-react';
 import { useImperativeHandle } from 'react';
 
 import { forwardRef } from 'react';
@@ -86,9 +86,9 @@ const OtpInput = ({ length = 6, onComplete ,red,green,resetRedGeen}) => {
           maxLength={1}
           ref={(ref) => inputRefs.current[index] = ref}
           value={data}
-          onChange={(e) => {handleChange(e.target, index),resetRedGeen()}}
-          onKeyDown={(e) => {handleKeyDown(e, index),resetRedGeen()}}
-          onPaste={handlePaste,resetRedGeen}
+          onChange={(e) => {handleChange(e.target, index);resetRedGeen();}}
+          onKeyDown={(e) => {handleKeyDown(e, index);resetRedGeen()}}
+          onPaste={(e) => {handlePaste(e);resetRedGeen()}}
           onClick={resetRedGeen}
           className={`${red && `border-red-500 ring-2 ring-red-200 focus:border-red-500 focus:ring-2 focus:ring-red-200`} ${green && `border-green-500 ring-2 ring-green-200 focus:border-green-500 focus:ring-2 focus:ring-green-200`}
             w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold text-gray-800 bg-white border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all`}
@@ -119,8 +119,11 @@ const  OutInput = forwardRef( (props, ref) => {
   // Hàm này được gọi tự động khi nhập đủ 6 số
     const [red,setRed] = useState(false);
     const [green,setGreen] = useState(false);
+    const [loading,setLoading] = useState(false);
   const handleOtpComplete = (otpCode) => {
+    setLoading(true);
        setTimeout(() => {
+      
       axios.post("http://localhost:8080/api/auth/verify-otp", {
        otp: otpCode,
        email: props.email
@@ -129,7 +132,7 @@ const  OutInput = forwardRef( (props, ref) => {
     .then(res => {
       console.log(res.data);
       toast.success(res.data.message);
-      
+      setLoading(false);
       setGreen(true);
       setTimeout(()=>{
       dialogRef.current.close();
@@ -140,8 +143,9 @@ const  OutInput = forwardRef( (props, ref) => {
       console.error(error.response.data);
       toast.warning(error.response.data.message);
       setRed(true);
+      setLoading(false);
     });
-      }, 1000);
+      }, 2000);
           
   };
 
@@ -162,15 +166,16 @@ const  OutInput = forwardRef( (props, ref) => {
         {/* GỌI COMPONENT OTP VÀO ĐÂY */}
         <OtpInput length={6} onComplete={handleOtpComplete} red={red} green={green} resetRedGeen={setFasle} />
         <div className='flex flex-col items-center justify-center mt-4'>
+        {loading && 
+        <div className="flex items-center justify-center space-x-2">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+        </div>
+       }
 
-        {/* <button
-         onClick={handleOtpComplete}
-         className='p-3 rounded-2xl bg-blue-400 text-white text-sm font-bold hover:bg-blue-500 transition-colors duration-300 ease-in-out'>Xác Thực</button> */}
-
-        { props.time>0 &&
+        { props.time>0 && !loading &&
         <p className="text-sm text-gray-600 mt-4"> Gửi lại mã sau <span className="font-medium text-blue-500">{props.time}s</span></p>
         }
-        {props.time==0 && 
+        {props.time==0 && !loading && 
         <button 
           className="mt-4 text-sm text-gray-500 hover:text-blue-500 transition-colors"
           onClick={() => {{props.sendOtp(); props.timeRemaining();} }}

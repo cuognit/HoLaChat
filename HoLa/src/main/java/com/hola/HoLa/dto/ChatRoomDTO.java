@@ -8,5 +8,13 @@ public class ChatRoomDTO {
     private String roomName;
     private Boolean isGroup;
     private String avatarUrl;
-    
+    private Long targetUserId;
+    private String targetUserName;
+    private String targetAvatarUrl;
+    private Boolean isOnline;
+    private String lastMessage;
+    private java.time.LocalDateTime lastMessageTime;
+    private Long lastSenderId;
+    private Integer unreadCount;
+    private Boolean isLastMessageSeen;
 }

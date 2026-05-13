@@ -30,6 +30,8 @@ public class RoomMember {
     @Enumerated(EnumType.STRING)
     private MemberRole role = MemberRole.MEMBER; // Enum: ADMIN, MEMBER
 
+    private Long lastReadMessageId;
+
     @CreationTimestamp
     private LocalDateTime joinedAt;
 }

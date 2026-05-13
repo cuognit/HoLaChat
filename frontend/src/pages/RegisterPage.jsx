@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect} from 'react';
 import { Mail, Lock,User } from 'lucide-react';
-import OutInput from '../components/OtpInput';
+import OutInput from '../components/auth/OtpInput';
 import axios from 'axios';
 import {toast} from 'sonner';
 
@@ -87,7 +87,7 @@ export default function RegisterPage() {
                 setTime(120);
                 
          };
-        const enableSubmit = email && passWord && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(passWord);
+        const enableSubmit = email && passWord && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 
     return (
@@ -131,7 +131,7 @@ export default function RegisterPage() {
                         type="email"
                         placeholder="Email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
                         className="flex-1 outline-none text-gray-800 placeholder-gray-400 bg-transparent"
                         required
                         />
@@ -170,7 +170,7 @@ export default function RegisterPage() {
                     </div>
                     
                     <p className="text-red-500 text-xs ">
-                        {passWord && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(passWord) ? "Mật khẩu phải chứa (8 ký tự, 1 chữ hoa, 1 chữ thường, 1 số, 1 ký tự đặc biệt)" : ""}
+                        {passWord && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[~!@#$%^&*(){}}|"':;,.?`])[A-Za-z\d~!@#$%^&*(){}}|"':;,.?`]{8,}$/.test(passWord) ? "Mật khẩu phải chứa (8 ký tự, 1 chữ hoa, 1 chữ thường, 1 số, 1 ký tự đặc biệt)" : ""}
                     </p>
                     
                     {/* Nút Đăng ký */}
@@ -178,13 +178,13 @@ export default function RegisterPage() {
                         onClick={startTimer}
                         disabled={!enableSubmit}
                         type="submit"
-                        className="mt-8 disabled:opacity-50 w-full bg-[#0896f5] hover:bg-[#5bb4f1] text-white font-medium py-3.5 rounded-md transition-colors"
+                        className="cursor-pointer mt-8 disabled:opacity-50 w-full bg-[#0896f5] hover:bg-[#5bb4f1] text-white font-medium py-3.5 rounded-md transition-colors"
                     >
                         Đăng ký
                     </button>
 
                    <a href="/login" className="text-blue-500 hover:text-blue-700 text-sm font-medium text-center block mt-4">
-                        Already have an account? Login here
+                        Đã có tài khoản? Đăng nhập tại đây
                     </a>
 
                     </form>

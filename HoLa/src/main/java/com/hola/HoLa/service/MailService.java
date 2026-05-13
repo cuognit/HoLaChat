@@ -15,7 +15,7 @@ public class MailService {
 
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setTo(to);
-        msg.setSubject("[HaLo] Ma OTP cua ban la "+otp);
+        msg.setSubject("[HoLa] Ma OTP cua ban la "+otp);
         msg.setText("Ma OTP cua ban la: "+otp+"\nMa co hieu luc trong 2 phut. Vui long khong chia se ma nay voi bat ky ai");
 
         mailSender.send(msg);

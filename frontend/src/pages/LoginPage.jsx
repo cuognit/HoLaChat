@@ -1,25 +1,43 @@
-import React, { useState } from 'react';
+import { useContext, useState ,useRef} from 'react';
 import { Mail, Lock } from 'lucide-react';
-
-
-
+import { toast } from 'sonner';
+import { AuthContext } from '../context/AuthContextInstance.js';
+import { useNavigate } from 'react-router-dom';
+import DialogWindow from '../components/chat/dialog/DialogWindow.jsx';
+import api, { setAuthToken } from '../api/axiosConfig';
+import ForgetPassword from '../components/auth/ForgetPassword.jsx';
 export default function LoginPage() {
-    
+    const {setAccessToken} = useContext(AuthContext);
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const enableSubmit = email && password && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+    const navigate = useNavigate();
+    const enableSubmit = email && password && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ;
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Dữ liệu đăng nhập:", {
-        email,
-        password
+        api.post("auth/login",{
+            email: email,
+            passWord: password
+        })
+        .then(res => {
+            toast.success(res.data.message);
+            setAccessToken(res.data.data);
+            setAuthToken(res.data.data);
+            
+            navigate("/");
+        })
+        .catch (error => {
+            console.error(error.response.data);
+            toast.warning(error.response.data.message);
         });
-        alert(`Đăng nhập với email: ${email}`);
     };
-
+    const forgetPasswordRef = useRef();
+    const handleOpenForgetPassword = () => {
+        forgetPasswordRef.current.open();
+    };
     return (
         <>
+            <DialogWindow ref={forgetPasswordRef} dialogForm={<ForgetPassword/>} position="m-auto rounded-2xl"/>
            <div class="flex flex-col items-center justify-center h-screen bg-blue-100">
             <h1 class="text-blue-500 font-bold text-5xl mb-10">HoLa</h1>
             {/* Form Container */}
@@ -42,7 +60,7 @@ export default function LoginPage() {
                         type="email"
                         placeholder="Email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => setEmail(e.target.value.trim().toLowerCase())}
                         className="flex-1 outline-none text-gray-800 placeholder-gray-400 bg-transparent"
                         required
                         />
@@ -85,7 +103,7 @@ export default function LoginPage() {
                     <button
                         disabled={!enableSubmit}
                         type="submit"
-                        className="mt-8 disabled:opacity-50 w-full bg-[#0896f5] hover:bg-[#5bb4f1] text-white font-medium py-3.5 rounded-md transition-colors"
+                        className="cursor-pointer mt-8 disabled:opacity-50 w-full bg-[#0896f5] hover:bg-[#5bb4f1] text-white font-medium py-3.5 rounded-md transition-colors"
                     >
                         Đăng nhập
                     </button>
@@ -94,13 +112,14 @@ export default function LoginPage() {
                     <div className="text-center mt-6">
                         <button 
                         type="button"
-                        className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                        onClick={() => {handleOpenForgetPassword();}} 
+                        className="cursor-pointer text-gray-400 hover:text-gray-800 text-sm font-medium"
                         >
-                        Quên mật khẩu
+                        Quên mật khẩu?
                         </button>
                     </div>
-                    <a href="/register" className="text-blue-500 hover:text-blue-700 text-sm font-medium text-center block mt-4">
-                        Don't have an account? Register here
+                    <a href="/register" className="text-blue-500 cursor-pointer hover:text-blue-700 text-sm font-medium text-center block mt-4">
+                        Đăng ký tài khoản
                     </a>
                     </form>
                 </div>
