@@ -21,7 +21,7 @@ export default function DialogWindow({dialogForm,ref,position}){
         }
     return (
         <>
-            <dialog onClick={handleClick} ref={dialogRef} className={`border-none ${position} absolute rounded ` }>
+            <dialog onClick={handleClick} ref={dialogRef} className={`border-none ${position} rounded ` }>
                 {/* <X onClick={()=>dialogRef.current.close()} className="relative right-0 left-52 text-gray-500 cursor-pointer hover:text-gray-700"/> */}
                 {dialogForm}
             </dialog>

@@ -4,7 +4,7 @@ import { useChat } from "../../hooks/useChat";
 import { getMessagesByRoom } from "../../services/messageService";
 import { normalizeIncomingMessage } from "../../utils/chatMessage";
 import { ArrowDown, Loader2, Loader } from "lucide-react";
-
+import { DashRing, BouncingDots, Ripple} from "../LoadingUI";
 export default function DisplayMessage() {
     const { selectedUser, setSelectedUser, currentUser } = useChat();
     const containerRef = useRef(null);
@@ -205,7 +205,8 @@ export default function DisplayMessage() {
                 <div ref={bottomObserverTarget} className="h-1 w-full shrink-0"></div>
 
                 {isLoadingMessages ? (
-                    <div className="w-8 h-8 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin m-auto"></div>
+                    <Ripple className="h-15 w-15 text-blue-400 m-auto" />
+                    // <div className="w-8 h-8 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin m-auto"></div>
                 ) : messages.length > 0 ? (
                     [...messages].reverse().map((message, index) => {
                         // Lấy thời gian của message trước đó và tiếp theo (trong array đảo ngược)
@@ -257,7 +258,7 @@ export default function DisplayMessage() {
                 <div ref={observerTarget} className="h-4 w-full"></div>
                 {!isLoadingMessages && isFetchingMore && (
                     <div className="w-full flex justify-center my-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                        <DashRing className="w-4 h-4 text-blue-500" />
                     </div>
                 )}
             </div>

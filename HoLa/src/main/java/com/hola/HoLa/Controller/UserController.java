@@ -2,8 +2,11 @@ package com.hola.HoLa.Controller;
 
 import com.hola.HoLa.dto.RequestLogin;
 import com.hola.HoLa.dto.RequestRegister;
+import com.hola.HoLa.dto.RequestResetPassword;
 import com.hola.HoLa.dto.RequestVerifiedOtp;
 import com.hola.HoLa.dto.ResponseApi;
+import com.hola.HoLa.dto.ProfileUpdateRequest;
+import com.hola.HoLa.dto.UserDTO;
 import com.hola.HoLa.model.User;
 import com.hola.HoLa.model.RefreshToken;
 import com.hola.HoLa.queue.OtpQueueProducer;
@@ -12,6 +15,7 @@ import com.hola.HoLa.repository.RefreshTokenRepository;
 import com.hola.HoLa.security.JwtUtils;
 import com.hola.HoLa.service.MailService;
 import com.hola.HoLa.service.UserService;
+import com.hola.HoLa.service.CloudinaryService;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.HashMap;
@@ -80,14 +85,28 @@ public class UserController {
             if (refreshToken == null) {
                 throw new RuntimeException("Refresh token not found in cookie!");
             }
-            RefreshToken token = refreshTokenRepository.findByRefreshToken(refreshToken).orElseThrow(()->new RuntimeException("Refresh token not found!"));
+            
+            RefreshToken token = refreshTokenRepository.findByRefreshToken(refreshToken)
+                    .orElseThrow(() -> new RuntimeException("Refresh token not found!"));
+            
+            // 1. KIỂM TRA HẾT HẠN: Nếu thời gian hiện tại đã vượt quá expiryDate
+            if (token.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+                // Xóa luôn khỏi database để dọn rác và bảo mật
+                refreshTokenRepository.delete(token); 
+                throw new RuntimeException("Refresh token has expired! Please login again.");
+            }
+            
+            // 2. KIỂM TRA BỊ THU HỒI (Revoked):
+            if (token.isRevoked()) {
+                throw new RuntimeException("Refresh token has been revoked!");
+            }
+            
             String newAccessToken = JwtUtils.generateAccessToken(token.getUser().getEmail());
             ResponseApi<String> response = new ResponseApi<>(200, "Refresh token successfully!", newAccessToken );   
-            return ResponseEntity.ok()
-            .body(response);
+            return ResponseEntity.ok().body(response);
         }
         catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400,e.getMessage(),null));
+            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
         }
     }
     @PostMapping("/logout")
@@ -173,6 +192,43 @@ public class UserController {
         }
 
     }
+
+//  [POST] /forgot-password
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ResponseApi<String>> forgotPassword(@RequestBody RequestRegister user) {
+        try {
+            userService.forgotPassword(user.getEmail());
+            ResponseApi<String> response = new ResponseApi<>(200, "Mã OTP đã được gửi đến email của bạn.", null);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
+        }
+    }
+
+//  [POST] /reset-password
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseApi<String>> resetPassword(@RequestBody RequestResetPassword dto) {
+        try {
+            userService.resetPassword(dto);
+            ResponseApi<String> response = new ResponseApi<>(200, "Đặt lại mật khẩu thành công!", null);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
+        }
+    }
+
+//  [POST] /verify-reset-otp
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<ResponseApi<String>> verifyResetOtp(@RequestBody RequestVerifiedOtp dto) {
+        try {
+            userService.verifyResetOtp(dto);
+            ResponseApi<String> response = new ResponseApi<>(200, "Mã OTP hợp lệ!", null);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
+        }
+    }
+
 //   [GET] /user
     @GetMapping("/user")
     public ResponseEntity getUser() {
@@ -214,4 +270,63 @@ public class UserController {
         }
     }
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    @PutMapping("/profile/update")
+    public ResponseEntity<ResponseApi<UserDTO>> updateProfile(@RequestBody ProfileUpdateRequest request) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            UserDTO updatedUser = userService.updateProfile(email, request);
+            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật thông tin cá nhân thành công!", updatedUser));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
+        }
+    }
+
+    // @PostMapping("/profile/avatar")
+    // public ResponseEntity<ResponseApi<UserDTO>> updateAvatar(@RequestParam("file") MultipartFile file) {
+    //     try {
+    //         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    //         String avatarUrl = cloudinaryService.uploadFile(file, "hola_chat/avatars");
+    //         UserDTO updatedUser = userService.updateAvatar(email, avatarUrl);
+    //         return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh đại diện thành công!", updatedUser));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
+    //     }
+    // }
+
+    // @PostMapping("/profile/cover")
+    // public ResponseEntity<ResponseApi<UserDTO>> updateCover(@RequestParam("file") MultipartFile file) {
+    //     try {
+    //         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    //         String coverUrl = cloudinaryService.uploadFile(file, "hola_chat/covers");
+    //         UserDTO updatedUser = userService.updateCover(email, coverUrl);
+    //         return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh bìa thành công!", updatedUser));
+    //     } catch (Exception e) {
+    //         return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
+    //     }
+    // }
+    
+        @PutMapping("/profile/avatar")
+    public ResponseEntity<ResponseApi<UserDTO>> updateAvatarUrl(@RequestParam("avatarUrl") String avatarUrl) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            UserDTO updatedUser = userService.updateAvatar(email, avatarUrl);
+            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh đại diện thành công!", updatedUser));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
+        }
+    }
+
+    @PutMapping("/profile/cover")
+    public ResponseEntity<ResponseApi<UserDTO>> updateCoverUrl(@RequestParam("coverUrl") String coverUrl) {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            UserDTO updatedUser = userService.updateCover(email, coverUrl);
+            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh bìa thành công!", updatedUser));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
+        }
+    }
 }

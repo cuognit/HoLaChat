@@ -2,18 +2,22 @@ package com.hola.HoLa.service;
 
 import com.hola.HoLa.dto.RequestLogin;
 import com.hola.HoLa.dto.RequestRegister;
+import com.hola.HoLa.dto.RequestResetPassword;
 import com.hola.HoLa.dto.RequestVerifiedOtp;
 import com.hola.HoLa.dto.UserDTO;
+import com.hola.HoLa.dto.ProfileUpdateRequest;
 import com.hola.HoLa.model.RefreshToken;
 import com.hola.HoLa.model.User;
 import com.hola.HoLa.repository.RefreshTokenRepository;
 import com.hola.HoLa.repository.UserRepository;
 import com.hola.HoLa.security.JwtUtils;
+import com.hola.HoLa.queue.OtpQueueProducer;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
@@ -38,6 +42,67 @@ public class UserService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private OtpQueueProducer producer;
+
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Email không tồn tại trong hệ thống."));
+        if (!user.getIsVerified()) {
+            throw new RuntimeException("Tài khoản chưa được xác thực. Vui lòng xác thực trước.");
+        }
+
+        RBucket<Long> cooldownBucket = redissonClient.getBucket("otp:cooldown:" + email);
+        if (cooldownBucket.isExists()) {
+            throw new RuntimeException("Vui lòng đợi 2 phút trước khi yêu cầu mã OTP mới.");
+        }
+
+        producer.sendOtpJob(email);
+        cooldownBucket.set(System.currentTimeMillis(), 2, TimeUnit.MINUTES);
+    }
+
+    public void resetPassword(RequestResetPassword dto) {
+        if (dto.getEmail() == null || dto.getOtp() == null || dto.getNewPassword() == null) {
+            throw new RuntimeException("Thiếu thông tin.");
+        }
+
+        RBucket<String> bucket = redissonClient.getBucket("otp:" + dto.getEmail());
+        String storedOtp = bucket.get();
+
+        if (storedOtp == null) {
+            throw new RuntimeException("Mã OTP đã hết hạn hoặc không hợp lệ.");
+        }
+
+        if (!storedOtp.equals(dto.getOtp())) {
+            throw new RuntimeException("Mã OTP không chính xác.");
+        }
+
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
+
+        user.setPassWord(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+        
+        bucket.delete();
+    }
+
+    public void verifyResetOtp(RequestVerifiedOtp dto) {
+        if (dto.getEmail() == null || dto.getOtp() == null) {
+            throw new RuntimeException("Thiếu thông tin.");
+        }
+
+        RBucket<String> bucket = redissonClient.getBucket("otp:" + dto.getEmail());
+        String storedOtp = bucket.get();
+
+        if (storedOtp == null) {
+            throw new RuntimeException("Mã OTP đã hết hạn hoặc không hợp lệ.");
+        }
+
+        if (!storedOtp.equals(dto.getOtp())) {
+            throw new RuntimeException("Mã OTP không chính xác.");
+        }
+    }
 
     public void register(RequestRegister dto) {
         User userExist = userRepository.findByEmail(dto.getEmail()).orElse(null);
@@ -123,6 +188,9 @@ public class UserService {
         dto.setUserName(userExist.getUserName());
         dto.setEmail(userExist.getEmail());
         dto.setAvatarUrl(userExist.getAvatarUrl());
+        dto.setCoverUrl(userExist.getCoverUrl());
+        dto.setGender(userExist.getGender());
+        dto.setBirthday(userExist.getBirthday());
         
         // Check real-time status from Redis
         RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + email.toLowerCase());
@@ -139,6 +207,9 @@ public class UserService {
             dto.setUserName(user.getUserName());
             dto.setEmail(user.getEmail());
             dto.setAvatarUrl(user.getAvatarUrl());
+            dto.setCoverUrl(user.getCoverUrl());
+            dto.setGender(user.getGender());
+            dto.setBirthday(user.getBirthday());
             dto.setIsVerified(user.getIsVerified());
             
             // Get real-time status from Redis for each user
@@ -163,6 +234,9 @@ public class UserService {
                     dto.setUserName(user.getUserName());
                     dto.setEmail(user.getEmail());
                     dto.setAvatarUrl(user.getAvatarUrl());
+                    dto.setCoverUrl(user.getCoverUrl());
+                    dto.setGender(user.getGender());
+                    dto.setBirthday(user.getBirthday());
                     dto.setIsVerified(user.getIsVerified());
                     
                     RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + user.getEmail().toLowerCase());
@@ -182,5 +256,38 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIsOnline(isOnline);
         userRepository.save(user);
+    }
+
+    @Transactional
+    public UserDTO updateProfile(String email, ProfileUpdateRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
+        if (request.getUserName() != null) {
+            user.setUserName(request.getUserName());
+        }
+        if (request.getGender() != null) {
+            user.setGender(request.getGender());
+        }
+        user.setBirthday(request.getBirthday());
+        userRepository.save(user);
+        return (UserDTO) getInf(email);
+    }
+
+    @Transactional
+    public UserDTO updateAvatar(String email, String avatarUrl) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
+        user.setAvatarUrl(avatarUrl);
+        userRepository.save(user);
+        return (UserDTO) getInf(email);
+    }
+
+    @Transactional
+    public UserDTO updateCover(String email, String coverUrl) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
+        user.setCoverUrl(coverUrl);
+        userRepository.save(user);
+        return (UserDTO) getInf(email);
     }
 }

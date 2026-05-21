@@ -1,5 +1,6 @@
 package com.hola.HoLa.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -29,6 +30,9 @@ public class User {
     private String passWord;
 
     private String avatarUrl;
+    private String coverUrl;
+    private String gender;
+    private LocalDate birthday;
     private Boolean isOnline = false;
     private Boolean isVerified = false;
 

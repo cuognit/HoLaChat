@@ -22,3 +22,36 @@
   /* Ẩn thanh cuộn mặc định */
 
 }
+
+/* Hiệu ứng mở to dần từ giữa cho các cửa sổ dialog (HTML5 dialog) */
+@keyframes dialogZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+    /* backdrop-filter: blur(0px); */
+  }
+  to {
+    opacity: 1;
+    /* backdrop-filter: blur(4px); */
+  }
+}
+
+.dialog-animate, dialog[open] {
+  transform-origin: center;
+  animation: dialogZoomIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* dialog[open]::backdrop {
+  animation: backdropFadeIn 0.25s ease-out forwards;
+  background-color: rgba(0, 0, 0, 0.4);
+} */

@@ -1,0 +1,14 @@
+package com.hola.HoLa.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class RequestResetPassword {
+    private String email;
+    private String otp;
+    private String newPassword;
+}

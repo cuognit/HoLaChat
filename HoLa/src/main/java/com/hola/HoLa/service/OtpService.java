@@ -20,10 +20,10 @@ public class OtpService {
 
         String otp = String.valueOf((int)(Math.random() * 900000) + 100000);
 
-        // lưu Redis (TTL 2 phút)
+        // lưu Redis (TTL 5 phút)
         RBucket<String> bucket = redissonClient.getBucket("otp:" + email);
 
-        bucket.set(otp, 2, TimeUnit.MINUTES);
+        bucket.set(otp, 5, TimeUnit.MINUTES);
 
 
         mailService.send(email, otp);

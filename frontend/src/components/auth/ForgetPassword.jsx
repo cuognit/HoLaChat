@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Lock, KeyRound, CheckCircle2, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
-
+import api from '../../api/axiosConfig';
+import { DashRing, BouncingDots, Ripple } from '../LoadingUI';
 export default function ForgetPassword () {
   
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password, 4: Success
@@ -24,48 +25,78 @@ export default function ForgetPassword () {
     }
   };
 
-//   const resetFlow = () => {
-//     setStep(1);
-//     setEmail('');
-//     setOtp(['', '', '', '', '', '']);
-//     setNewPassword('');
-//     setConfirmPassword('');
-//     setError('');
-//     setIsLoading(false);
-//   };
 
-  const handleNextStep = (e) => {
+
+  const handleNextStep = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // Simulate API calls
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
       if (step === 1) {
         if (!email.includes('@')) {
           setError('Vui lòng nhập email hợp lệ');
+          setIsLoading(false);
           return;
         }
+        
+        await api.post('/auth/forgot-password', { email });
         setStep(2);
       } else if (step === 2) {
         if (otp.join('').length < 6) {
           setError('Vui lòng nhập đủ 6 số OTP');
+          setIsLoading(false);
           return;
         }
+        
+        // Xác minh OTP với thời gian loading luôn là 2s (kể cả khi lỗi)
+        const [apiResult] = await Promise.allSettled([
+          api.post('/auth/verify-reset-otp', { email, otp: otp.join('') }),
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+
+        if (apiResult.status === 'rejected') {
+          throw apiResult.reason;
+        }
+        
         setStep(3);
       } else if (step === 3) {
         if (newPassword.length < 6) {
           setError('Mật khẩu phải có ít nhất 6 ký tự');
+          setIsLoading(false);
           return;
         }
         if (newPassword !== confirmPassword) {
           setError('Mật khẩu xác nhận không khớp');
+          setIsLoading(false);
           return;
         }
+        
+        await api.post('/auth/reset-password', { 
+          email, 
+          otp: otp.join(''), 
+          newPassword 
+        });
+        
         setStep(4);
       }
-    }, 1000);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Đã xảy ra lỗi kết nối.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      await api.post('/auth/forgot-password', { email });
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Đã xảy ra lỗi kết nối.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -155,8 +186,13 @@ export default function ForgetPassword () {
                       ))}
                     </div>
                     <div className="text-center">
-                      <button type="button" className="text-sm text-blue-600 hover:underline font-medium">
-                        Gửi lại mã (60s)
+                      <button 
+                        type="button" 
+                        onClick={handleResendOtp}
+                        disabled={isLoading}
+                        className="cursor-pointer text-sm text-blue-600 hover:underline font-medium disabled:opacity-50"
+                      >
+                        Gửi lại mã
                       </button>
                     </div>
                   </div>
@@ -259,7 +295,8 @@ export default function ForgetPassword () {
                       }`}
                     >
                       {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <Ripple className="w-5 h-5 text-white" />
+                        // <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                       ) : (
                         <>
                           {step === 1 && "Tiếp tục"}

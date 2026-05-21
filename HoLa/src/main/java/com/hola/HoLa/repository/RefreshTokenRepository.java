@@ -14,4 +14,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     public Optional<RefreshToken> findByRefreshToken(String refreshToken);
     @Transactional
     public void deleteByRefreshToken(String refreshToken);
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteByExpiryDateBefore(java.time.LocalDateTime now);
 }

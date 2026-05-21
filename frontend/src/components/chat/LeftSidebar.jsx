@@ -2,13 +2,15 @@ import { Search, UserPlus, Users2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ItemUser from "./ItemUser";
 import DialogWindow from "./dialog/DialogWindow";
-import Menu from "./dialog/Menu";
+
 import { useChat } from "../../hooks/useChat";
 import { useChatSocket } from "../../hooks/useChatSocket";
 import api from '../../api/axiosConfig';
 import { searchUsers } from "../../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
-
+import Menu from "./dialog/Menu";
+import Profile from "./dialog/Profile";
+import ConfirmLogout from "./dialog/ConfirmLogout";
 function escapeRegExp(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -147,8 +149,13 @@ function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
     };
 }
 
+
+
 export default function LeftSidebar({ avatarUrl, name, email }) {
-    const dialogRef = useRef();
+ 
+    const menuRef = useRef();
+    const profileRef = useRef();
+    const logoutRef = useRef();
     const { selectedUser, setSelectedUser, currentUser, updateUserStatus } = useChat();
     const { subscribe, publish, isConnected } = useChatSocket();
     const [users, setUsers] = useState([]);
@@ -187,8 +194,8 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
     }, [users, urlRoomId, selectedUser, setSelectedUser]);
 
     function handleClick() {
-        dialogRef.current.open();
-    }
+        menuRef.current.open();
+        }
 
     // Cập nhật danh sách users khi selectedUser thay đổi (lastMessage hoặc lastMessageTime)
     useEffect(() => {
@@ -419,21 +426,68 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
             });
     }, [currentUser?.id]);
 
-   
+    const sortedUsers = [...users].sort((a, b) => {
+        const aHasUnread = (a.unreadCount > 0) ? 1 : 0;
+        const bHasUnread = (b.unreadCount > 0) ? 1 : 0;
+        
+        if (aHasUnread !== bHasUnread) {
+            return bHasUnread - aHasUnread; // Ưu tiên chưa đọc lên trước
+        }
+        
+        // Nếu cùng trạng thái đọc -> Sắp xếp theo thời gian tin nhắn mới nhất
+        const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+        const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+        return timeB - timeA;
+    });   
 
     return (
         <>
+            {/* Menu Dialog chính */}
             <DialogWindow
-                dialogForm={<Menu userName={name} email={email} avatarUrl={avatarUrl} />}
-                ref={dialogRef}
+                dialogForm={
+                    <Menu 
+                        userName={currentUser?.userName || name} 
+                        email={currentUser?.email || email} 
+                        avatarUrl={currentUser?.avatarUrl || avatarUrl || "/avatar.jpg"} 
+                        openProfile={() => profileRef.current.open()}
+                        openLogout={() => logoutRef.current.open()}
+                        closeMenu={() => menuRef.current.close()}
+                    />
+                }
+                ref={menuRef}
                 position="ms-20"
+            />
+
+            {/* Dialog Thông tin cá nhân (Đồng cấp) */}
+            <DialogWindow 
+                dialogForm={
+                    <Profile 
+                        avatarUrl={currentUser?.avatarUrl || avatarUrl || "/avatar.jpg"} 
+                        userName={currentUser?.userName || name} 
+                        email={currentUser?.email || email} 
+                        onClose={() => profileRef.current.close()} 
+                    />
+                } 
+                ref={profileRef} 
+                position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[400px] max-w-[90vw] shadow-2xl`} 
+            />
+
+            {/* Dialog Xác nhận đăng xuất (Đồng cấp) */}
+            <DialogWindow 
+                dialogForm={
+                    <ConfirmLogout 
+                        cancleLogout={() => logoutRef.current.close()} 
+                    />
+                } 
+                ref={logoutRef} 
+                position={`m-auto`}
             />
             <div className="flex flex-col w-92 bg-white p-0 gap-2 border-r border-gray-200 h-screen">
                 <div className="flex bg-white-100 p-3 justify-start items-center gap-3 border-b border-gray-300">
                     <img
                         onClick={handleClick}
-                        src={avatarUrl}
-                        alt={name}
+                        src={currentUser?.avatarUrl || avatarUrl || "/avatar.jpg"}
+                        alt={currentUser?.userName || name}
                         className="cursor-pointer w-15 h-15 border-blue-700 border-4 hover:border transition-ease-in-out duration-300 rounded-full object-cover"
                     />
                     <div className="focus-within:ring-2 focus-within:ring-blue-500 flex items-center bg-gray-200 p-1 rounded-md gap-1">
@@ -474,7 +528,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                             <div className="p-4 text-center text-sm text-gray-500">Không tìm thấy ai</div>
                         )
                     ) : (
-                        users.map((user, index) => (
+                        sortedUsers.map((user, index) => (
                             <ItemUser
                                 key={user.id ?? user.roomId ?? index}
                                 user={user}
