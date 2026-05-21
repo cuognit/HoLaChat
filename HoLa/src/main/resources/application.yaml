@@ -6,9 +6,9 @@ spring:
       max-file-size: 10MB
       max-request-size: 10MB  
   datasource:
-    url: jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
-    username: postgres.soeggfaucnsmpngucjyo
-    password: NMCuongCT@1812 
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -19,14 +19,14 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
       timeout: 6000ms
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: cuongct18.jr@gmail.com
-    password: axjlgibonmbfhtgu
+    host: ${SPRING_MAIL_HOST}
+    port: ${SPRING_MAIL_PORT}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -35,6 +35,6 @@ spring:
             enable: true
 
 cloudinary:
-  cloud-name: dkdzpx1b0
-  api-key: 184836276326274
-  api-secret: xcRFL4lvqyN57PdwrGjU63XvPA8
+  cloud-name: ${CLOUDINARY_CLOUD_NAME}
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_API_SECRET}
