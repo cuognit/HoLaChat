@@ -51,6 +51,7 @@ export default function DisplayMessage() {
     useEffect(() => {
         setPage(0);
         setHasMore(true);
+        setIsLoadingMessages(false);
     }, [activeRoomId]);
 
     useEffect(() => {
@@ -205,12 +206,16 @@ export default function DisplayMessage() {
                 <div ref={bottomObserverTarget} className="h-1 w-full shrink-0"></div>
 
                 {isLoadingMessages ? (
-                    <Ripple className="h-15 w-15 text-blue-400 m-auto" />
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2 m-auto"> 
+                        <Ripple className="h-15 w-15 text-blue-400" />
+                        <p className="text-center text-gray-500 mb-2 text-[14px]">
+                            Nếu chờ quá lâu, vui lòng tải lại trang
+                        </p>
+                    </div>
                     // <div className="w-8 h-8 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin m-auto"></div>
-                ) : messages.length > 0 ? (
-                    [...messages].reverse().map((message, index) => {
-                        // Lấy thời gian của message trước đó và tiếp theo (trong array đảo ngược)
-                        const reversedMessages = [...messages].reverse();
+                ) : messages.length > 0 ? (() => {
+                    const reversedMessages = [...messages].reverse();
+                    return reversedMessages.map((message, index) => {
                         const previousMessage = reversedMessages[index + 1];
                         const nextMessage = reversedMessages[index - 1];
                         const previousMessageCreatedAt = previousMessage?.createdAt ?? null;
@@ -247,8 +252,8 @@ export default function DisplayMessage() {
                                 {showDateDivider && renderDateDivider(formatDateDivider(message.createdAt))}
                             </React.Fragment>
                         );
-                    })
-                ) : (
+                    });
+                })() : (
                     <div className="flex-1 flex items-center justify-center">
                         <p className="text-sm text-gray-500">Bắt đầu trò chuyện</p>
                     </div>

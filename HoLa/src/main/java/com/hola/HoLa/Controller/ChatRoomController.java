@@ -23,21 +23,13 @@ public class ChatRoomController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<ResponseApi<List<ChatRoomDTO>>> getRoomsByUser(@PathVariable Long userId) {
-        try {
-            List<ChatRoomDTO> rooms = chatRoomService.getRoomsByUserId(userId);
-            return ResponseEntity.ok(new ResponseApi<>(200, "Success", rooms));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-        }
+        List<ChatRoomDTO> rooms = chatRoomService.getRoomsByUserId(userId);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Success", rooms));
     }
 
     @PostMapping("/private")
     public ResponseEntity<ResponseApi<ChatRoomDTO>> getOrCreatePrivateRoom(@RequestBody PrivateRoomRequest request) {
-        try {
-            ChatRoom room = chatRoomService.getOrCreatePrivateRoom(request.getUserId(), request.getOtherUserId());
-            return ResponseEntity.ok(new ResponseApi<>(200, "Success", chatRoomService.toDto(room, request.getUserId())));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-        }
+        ChatRoom room = chatRoomService.getOrCreatePrivateRoom(request.getUserId(), request.getOtherUserId());
+        return ResponseEntity.ok(new ResponseApi<>(200, "Success", chatRoomService.toDto(room, request.getUserId())));
     }
 }

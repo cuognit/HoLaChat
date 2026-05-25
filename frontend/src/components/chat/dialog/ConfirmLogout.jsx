@@ -2,15 +2,20 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig.js";
 import { AuthContext } from '../../../context/AuthContextInstance.js';
+import {ChatContext} from '../../../context/chatContextInstance.js';
 import { useContext } from "react";
 export default function ConfirmLogout({cancleLogout}) {
     const navigate=useNavigate();
     const { setAccessToken } = useContext(AuthContext);
+    const { setCurrentUser } = useContext(ChatContext);
    async function handleLogout() {
           try{
             await api.post("auth/logout",{});
             setAccessToken(null);
+            setCurrentUser(null);
             navigate("/login");
+            toast.success("Đăng xuất thành công!");
+
         }catch(error){
             toast.error(error.response.data.message);
         }

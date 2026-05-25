@@ -6,7 +6,7 @@ export default function ChatProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [userStatusMap, setUserStatusMap] = useState({}); // Lưu trạng thái online/offline của users
 
-  const updateUserStatus = (email, isOnline) => {
+  const updateUserStatus = (email, isOnline, userId) => {
     setUserStatusMap(prev => ({
       ...prev,
       [email]: isOnline

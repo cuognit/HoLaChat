@@ -38,236 +38,179 @@ public class UserController {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
 //    [POST] /register
     @PostMapping("/register")
     public ResponseEntity<ResponseApi<String>> register(@RequestBody RequestRegister user){
-        try{
-            userService.register(user);
-            ResponseApi<String> response = new ResponseApi<>(200, "Đăng ký thành công!", "Success Data");
-            return ResponseEntity.ok(response);
-        }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400,e.getMessage(),null));
-        }
-
+        userService.register(user);
+        ResponseApi<String> response = new ResponseApi<>(200, "Đăng ký thành công!", "Success Data");
+        return ResponseEntity.ok(response);
     }
+
 //    [POST] /login
     @PostMapping("/login")
     public ResponseEntity<ResponseApi<Object>> login(@RequestBody RequestLogin user){
-        try{
-
-            Map<String, String> tokens = userService.login(user);
-            String refreshToken = tokens.get("refreshToken");
-            String accessToken = tokens.get("accessToken");
-            if(refreshToken == null || accessToken == null){
-                throw new RuntimeException("Refresh token or Access token is null");
-            }
-            // lưu rc vào cookie
-            ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(7 * 24 * 60 * 60)
-                .sameSite("Lax").build();
-            ResponseApi<Object> response = new ResponseApi<>(200, "Đăng nhập thành công!", accessToken );   
-            return ResponseEntity.ok()
-            .header("Set-Cookie", cookie.toString())
-            .body(response);
+        Map<String, String> tokens = userService.login(user);
+        String refreshToken = tokens.get("refreshToken");
+        String accessToken = tokens.get("accessToken");
+        if(refreshToken == null || accessToken == null){
+            throw new RuntimeException("Refresh token or Access token is null");
         }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400,e.getMessage(),null));
-        }
+        // lưu rc vào cookie
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
+            .httpOnly(true)
+            .secure(false)
+            .path("/")
+            .maxAge(7 * 24 * 60 * 60)
+            .sameSite("Lax").build();
+        ResponseApi<Object> response = new ResponseApi<>(200, "Đăng nhập thành công!", accessToken );   
+        return ResponseEntity.ok()
+        .header("Set-Cookie", cookie.toString())
+        .body(response);
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<ResponseApi<String>> refresh(HttpServletRequest request, @CookieValue(name = "refresh_token", required = false) String refreshToken){
-        try{         
-            if (refreshToken == null) {
-                throw new RuntimeException("Refresh token not found in cookie!");
-            }
-            
-            RefreshToken token = refreshTokenRepository.findByRefreshToken(refreshToken)
-                    .orElseThrow(() -> new RuntimeException("Refresh token not found!"));
-            
-            // 1. KIỂM TRA HẾT HẠN: Nếu thời gian hiện tại đã vượt quá expiryDate
-            if (token.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
-                // Xóa luôn khỏi database để dọn rác và bảo mật
-                refreshTokenRepository.delete(token); 
-                throw new RuntimeException("Refresh token has expired! Please login again.");
-            }
-            
-            // 2. KIỂM TRA BỊ THU HỒI (Revoked):
-            if (token.isRevoked()) {
-                throw new RuntimeException("Refresh token has been revoked!");
-            }
-            
-            String newAccessToken = JwtUtils.generateAccessToken(token.getUser().getEmail());
-            ResponseApi<String> response = new ResponseApi<>(200, "Refresh token successfully!", newAccessToken );   
-            return ResponseEntity.ok().body(response);
+        if (refreshToken == null) {
+            throw new RuntimeException("Refresh token not found in cookie!");
         }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
+        
+        RefreshToken token = refreshTokenRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new RuntimeException("Refresh token not found!"));
+        
+        // 1. KIỂM TRA HẾT HẠN: Nếu thời gian hiện tại đã vượt quá expiryDate
+        if (token.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+            // Xóa luôn khỏi database để dọn rác và bảo mật
+            refreshTokenRepository.delete(token); 
+            throw new RuntimeException("Refresh token has expired! Please login again.");
         }
+        
+        // 2. KIỂM TRA BỊ THU HỒI (Revoked):
+        if (token.isRevoked()) {
+            throw new RuntimeException("Refresh token has been revoked!");
+        }
+        
+        String newAccessToken = JwtUtils.generateAccessToken(token.getUser().getEmail());
+        ResponseApi<String> response = new ResponseApi<>(200, "Refresh token successfully!", newAccessToken );   
+        return ResponseEntity.ok().body(response);
     }
+
     @PostMapping("/logout")
     public ResponseEntity<ResponseApi<String>> logout(HttpServletRequest request,@CookieValue(name = "refresh_token", required = false) String refreshToken){
-        try{
-            if (refreshToken == null) {
-                throw new RuntimeException("Refresh token not found in cookie!");
-            }
-            refreshTokenRepository.deleteByRefreshToken(refreshToken);
-            ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(0)
-                .sameSite("Lax").build();
-            ResponseApi<String> response = new ResponseApi<>(200, "Logout successfully!", null );   
-            return ResponseEntity.ok()
-            .header("Set-Cookie", cookie.toString())
-            .body(response);
+        if (refreshToken == null) {
+            throw new RuntimeException("Refresh token not found in cookie!");
         }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400,e.getMessage(),null));
-        }
+        refreshTokenRepository.deleteByRefreshToken(refreshToken);
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+            .httpOnly(true)
+            .secure(false)
+            .path("/")
+            .maxAge(0)
+            .sameSite("Lax").build();
+        ResponseApi<String> response = new ResponseApi<>(200, "Logout successfully!", null );   
+        return ResponseEntity.ok()
+        .header("Set-Cookie", cookie.toString())
+        .body(response);
     }
+
     @Autowired
     private OtpQueueProducer producer;
     @Autowired
     RedissonClient redissonClient;
     @Autowired
     private UserRepository userRepository;
+
 //   [POST] /otp
     @PostMapping("/otp")
     public ResponseEntity<ResponseApi<String>> testOtp(@RequestBody RequestRegister user) {
-        try{
-            User userExist = userRepository.findByEmail(user.getEmail()).orElseThrow(()->new RuntimeException("User not found!"));
-            if(userExist.getIsVerified()==false) {
-            String email = user.getEmail();
-            RBucket<Long> cooldownBucket = redissonClient.getBucket("otp:cooldown:" + email);
+        User userExist = userRepository.findByEmail(user.getEmail()).orElseThrow(()->new RuntimeException("User not found!"));
+        if(userExist.getIsVerified()==false) {
+        String email = user.getEmail();
+        RBucket<Long> cooldownBucket = redissonClient.getBucket("otp:cooldown:" + email);
 
-            if (cooldownBucket.isExists()) {
-                throw new RuntimeException("Please wait before requesting another OTP");
-            }
-            producer.sendOtpJob(email);
-            cooldownBucket.set(System.currentTimeMillis(), 2, TimeUnit.MINUTES);
-                ResponseApi<String> response = new ResponseApi<>(200, "Đã gửi", "Success Data");
-                return ResponseEntity.ok(response);
-            }
-            else  {
-                throw new RuntimeException("User is already verified !");
-            }
+        if (cooldownBucket.isExists()) {
+            throw new RuntimeException("Please wait before requesting another OTP");
         }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400,e.getMessage(),null));
+        producer.sendOtpJob(email);
+        cooldownBucket.set(System.currentTimeMillis(), 2, TimeUnit.MINUTES);
+            ResponseApi<String> response = new ResponseApi<>(200, "Đã gửi", "Success Data");
+            return ResponseEntity.ok(response);
+        }
+        else  {
+            throw new RuntimeException("User is already verified !");
         }
     }
+
     // [POST] /resend-otp
     @PostMapping("/resend-otp")
     public ResponseEntity<ResponseApi<String>> resendOtp(@RequestBody RequestRegister user) {
-        try{
-            String email = user.getEmail();
-            RBucket<Long> cooldownBucket = redissonClient.getBucket("otp:cooldown:" + email);
-            if (cooldownBucket.isExists()) {
-                throw new RuntimeException("Please wait before requesting another OTP");
-            }
-            producer.sendOtpJob(email);
-            cooldownBucket.set(System.currentTimeMillis(), 2, TimeUnit.MINUTES);
-                ResponseApi<String> response = new ResponseApi<>(200, "Đã gửi", "Success Data");
-                return ResponseEntity.ok(response);
+        String email = user.getEmail();
+        RBucket<Long> cooldownBucket = redissonClient.getBucket("otp:cooldown:" + email);
+        if (cooldownBucket.isExists()) {
+            throw new RuntimeException("Please wait before requesting another OTP");
         }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(400,e.getMessage(),null));
-        }
+        producer.sendOtpJob(email);
+        cooldownBucket.set(System.currentTimeMillis(), 2, TimeUnit.MINUTES);
+            ResponseApi<String> response = new ResponseApi<>(200, "Đã gửi", "Success Data");
+            return ResponseEntity.ok(response);
     }
+
 //  [POST] /verify-otp
     @PostMapping("/verify-otp")
     public ResponseEntity<ResponseApi<String>> verify(@RequestBody RequestVerifiedOtp user) {
-        try {
-            userService.verifyOtp(user);
-            ResponseApi<String> response = new ResponseApi<>(200, "Đăng ký thành công!", "Success Data");
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
-        }
-
+        userService.verifyOtp(user);
+        ResponseApi<String> response = new ResponseApi<>(200, "Đăng ký thành công!", "Success Data");
+        return ResponseEntity.ok(response);
     }
 
 //  [POST] /forgot-password
     @PostMapping("/forgot-password")
     public ResponseEntity<ResponseApi<String>> forgotPassword(@RequestBody RequestRegister user) {
-        try {
-            userService.forgotPassword(user.getEmail());
-            ResponseApi<String> response = new ResponseApi<>(200, "Mã OTP đã được gửi đến email của bạn.", null);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
-        }
+        userService.forgotPassword(user.getEmail());
+        ResponseApi<String> response = new ResponseApi<>(200, "Mã OTP đã được gửi đến email của bạn.", null);
+        return ResponseEntity.ok(response);
     }
 
 //  [POST] /reset-password
     @PostMapping("/reset-password")
     public ResponseEntity<ResponseApi<String>> resetPassword(@RequestBody RequestResetPassword dto) {
-        try {
-            userService.resetPassword(dto);
-            ResponseApi<String> response = new ResponseApi<>(200, "Đặt lại mật khẩu thành công!", null);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
-        }
+        userService.resetPassword(dto);
+        ResponseApi<String> response = new ResponseApi<>(200, "Đặt lại mật khẩu thành công!", null);
+        return ResponseEntity.ok(response);
     }
 
 //  [POST] /verify-reset-otp
     @PostMapping("/verify-reset-otp")
     public ResponseEntity<ResponseApi<String>> verifyResetOtp(@RequestBody RequestVerifiedOtp dto) {
-        try {
-            userService.verifyResetOtp(dto);
-            ResponseApi<String> response = new ResponseApi<>(200, "Mã OTP hợp lệ!", null);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
-        }
+        userService.verifyResetOtp(dto);
+        ResponseApi<String> response = new ResponseApi<>(200, "Mã OTP hợp lệ!", null);
+        return ResponseEntity.ok(response);
     }
 
 //   [GET] /user
     @GetMapping("/user")
     public ResponseEntity getUser() {
-            try{
-                String email = SecurityContextHolder.getContext().getAuthentication().getName();
-                Object data = userService.getInf(email);
-                ResponseApi<Object> response = new ResponseApi<>(200, "Success", data);
-                return ResponseEntity.ok(response);
-            }
-            catch (RuntimeException e){
-                return ResponseEntity.badRequest().body(new ResponseApi(401, e.getMessage(),null));
-            }
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Object data = userService.getInf(email);
+        ResponseApi<Object> response = new ResponseApi<>(200, "Success", data);
+        return ResponseEntity.ok(response);
     }
+
     // [GET] /userChat
     @GetMapping("/userChat")
     public ResponseEntity getUserChat() {
-        try{
-            
-            Object data = userService.getAllUsers();
-            ResponseApi<Object> response = new ResponseApi<>(200, "Success", data);
-            return ResponseEntity.ok(response);
-
-        }
-        catch (RuntimeException e){
-            return ResponseEntity.badRequest().body(new ResponseApi(401, e.getMessage(),null));
-        }
+        Object data = userService.getAllUsers();
+        ResponseApi<Object> response = new ResponseApi<>(200, "Success", data);
+        return ResponseEntity.ok(response);
     }
 
     // [GET] /search
     @GetMapping("/search")
     public ResponseEntity searchUsers(@RequestParam String email) {
-        try {
-            String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            Object data = userService.searchUsersByEmail(email, currentEmail);
-            ResponseApi<Object> response = new ResponseApi<>(200, "Success", data);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi(400, e.getMessage(), null));
-        }
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        Object data = userService.searchUsersByEmail(email, currentEmail);
+        ResponseApi<Object> response = new ResponseApi<>(200, "Success", data);
+        return ResponseEntity.ok(response);
     }
 
     @Autowired
@@ -275,58 +218,29 @@ public class UserController {
 
     @PutMapping("/profile/update")
     public ResponseEntity<ResponseApi<UserDTO>> updateProfile(@RequestBody ProfileUpdateRequest request) {
-        try {
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserDTO updatedUser = userService.updateProfile(email, request);
-            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật thông tin cá nhân thành công!", updatedUser));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-        }
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserDTO updatedUser = userService.updateProfile(email, request);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật thông tin cá nhân thành công!", updatedUser));
     }
 
-    // @PostMapping("/profile/avatar")
-    // public ResponseEntity<ResponseApi<UserDTO>> updateAvatar(@RequestParam("file") MultipartFile file) {
-    //     try {
-    //         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-    //         String avatarUrl = cloudinaryService.uploadFile(file, "hola_chat/avatars");
-    //         UserDTO updatedUser = userService.updateAvatar(email, avatarUrl);
-    //         return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh đại diện thành công!", updatedUser));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-    //     }
-    // }
-
-    // @PostMapping("/profile/cover")
-    // public ResponseEntity<ResponseApi<UserDTO>> updateCover(@RequestParam("file") MultipartFile file) {
-    //     try {
-    //         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-    //         String coverUrl = cloudinaryService.uploadFile(file, "hola_chat/covers");
-    //         UserDTO updatedUser = userService.updateCover(email, coverUrl);
-    //         return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh bìa thành công!", updatedUser));
-    //     } catch (Exception e) {
-    //         return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-    //     }
-    // }
-    
-        @PutMapping("/profile/avatar")
+    @PutMapping("/profile/avatar")
     public ResponseEntity<ResponseApi<UserDTO>> updateAvatarUrl(@RequestParam("avatarUrl") String avatarUrl) {
-        try {
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserDTO updatedUser = userService.updateAvatar(email, avatarUrl);
-            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh đại diện thành công!", updatedUser));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-        }
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserDTO updatedUser = userService.updateAvatar(email, avatarUrl);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh đại diện thành công!", updatedUser));
     }
 
     @PutMapping("/profile/cover")
     public ResponseEntity<ResponseApi<UserDTO>> updateCoverUrl(@RequestParam("coverUrl") String coverUrl) {
-        try {
-            String email = SecurityContextHolder.getContext().getAuthentication().getName();
-            UserDTO updatedUser = userService.updateCover(email, coverUrl);
-            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh bìa thành công!", updatedUser));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-        }
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserDTO updatedUser = userService.updateCover(email, coverUrl);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật ảnh bìa thành công!", updatedUser));
+    }
+
+    // [GET] /api/auth/user/{id} - Lấy chi tiết thông tin bạn bè
+    @GetMapping("/user/{id}")
+    public ResponseEntity getUserById(@PathVariable Long id) {
+        UserDTO data = userService.getUserById(id);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Lấy thông tin thành công!", data));
     }
 }

@@ -1,9 +1,9 @@
 import api from "../api/axiosConfig";
-import axios from "axios"; // Dùng axios mặc định để không đính kèm token của app khi gọi lên Cloudinary
+import axios from "axios"; 
 
-// Lấy thông tin từ application.yaml của bạn
-const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/dkdzpx1b0/image/upload";
-const UPLOAD_PRESET = "hola_chat_preset"; // Tên Preset bạn vừa tạo ở Bước 1
+
+const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_CLOUDINARY_UPLOAD_URL;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 export async function updateProfileText(data) {
     const response = await api.put("/auth/profile/update", data);

@@ -178,7 +178,7 @@ public class UserService {
         bucket.delete();
     }
 
-    public Object getInf(String email) {
+    public UserDTO getInf(String email) {
         UserDTO dto = new UserDTO();
         User userExist = userRepository.findByEmail(email).orElse(null);
         if (userExist == null) {
@@ -270,7 +270,7 @@ public class UserService {
         }
         user.setBirthday(request.getBirthday());
         userRepository.save(user);
-        return (UserDTO) getInf(email);
+        return getInf(email);
     }
 
     @Transactional
@@ -279,7 +279,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
         user.setAvatarUrl(avatarUrl);
         userRepository.save(user);
-        return (UserDTO) getInf(email);
+        return getInf(email);
     }
 
     @Transactional
@@ -288,6 +288,26 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng."));
         user.setCoverUrl(coverUrl);
         userRepository.save(user);
-        return (UserDTO) getInf(email);
+        return getInf(email);
+    }
+
+        // Lấy thông tin chi tiết user theo ID (dành cho xem trang cá nhân bạn bè)
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setUserName(user.getUserName());
+        dto.setEmail(user.getEmail());
+        dto.setAvatarUrl(user.getAvatarUrl());
+        dto.setCoverUrl(user.getCoverUrl());
+        dto.setGender(user.getGender());
+        dto.setBirthday(user.getBirthday());
+        dto.setIsVerified(user.getIsVerified());
+        
+        // Lấy trạng thái hoạt động từ Redis
+        RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + user.getEmail().toLowerCase());
+        dto.setIsOnline("online".equals(statusBucket.get()));
+        return dto;
     }
 }

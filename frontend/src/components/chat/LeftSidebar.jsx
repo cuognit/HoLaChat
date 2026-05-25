@@ -1,335 +1,53 @@
-import { Search, UserPlus, Users2 } from "lucide-react";
+import { Search, UserPlus, Users2, MessageSquare, Contact, Cloud, Folder, SquareCheck, Briefcase, Settings, ChevronDown, MoreHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ItemUser from "./ItemUser";
 import DialogWindow from "./dialog/DialogWindow";
-
+import ContactDialog from "./dialog/ContactDialog";
 import { useChat } from "../../hooks/useChat";
 import { useChatSocket } from "../../hooks/useChatSocket";
 import api from '../../api/axiosConfig';
 import { searchUsers } from "../../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
 import Menu from "./dialog/Menu";
+import SettingsMenu from "./dialog/SettingsMenu"; // Import SettingsMenu mới lập
 import Profile from "./dialog/Profile";
 import ConfirmLogout from "./dialog/ConfirmLogout";
-function escapeRegExp(value) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function getOpponentNameFromRoomName(roomName, currentUserName) {
-    if (!roomName) {
-        return null;
-    }
-
-    if (!currentUserName) {
-        return roomName;
-    }
-
-    const separators = [",", " - ", "-", " & ", "&", " / ", "/"];
-
-    for (const separator of separators) {
-        if (!roomName.includes(separator)) {
-            continue;
-        }
-
-        const parts = roomName
-            .split(separator)
-            .map((part) => part.trim())
-            .filter(Boolean);
-
-        if (parts.length < 2) {
-            continue;
-        }
-
-        const opponent = parts.find((part) => part.toLowerCase() !== currentUserName.toLowerCase());
-        if (opponent) {
-            return opponent;
-        }
-    }
-
-    const strippedRoomName = roomName
-        .replace(new RegExp(`^${escapeRegExp(currentUserName)}\\s*[,\\-/&]*\\s*`, "i"), "")
-        .replace(new RegExp(`\\s*[,\\-/&]*\\s*${escapeRegExp(currentUserName)}$`, "i"), "")
-        .trim();
-
-    return strippedRoomName || roomName;
-}
-
-function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
-    const nestedUser =
-        rawRoom?.user ??
-        rawRoom?.receiver ??
-        rawRoom?.targetUser ??
-        rawRoom?.otherUser ??
-        rawRoom?.participant ??
-        rawRoom?.members?.find((member) => member?.id !== currentUserId) ??
-        rawRoom?.participants?.find((member) => member?.id !== currentUserId) ??
-        {};
-
-    const roomId = rawRoom?.roomId ?? rawRoom?.chatRoomId ?? rawRoom?.id ?? rawRoom?.room?.id ?? null;
-    const targetUserId =
-        rawRoom?.targetUserId ??
-        rawRoom?.otherUserId ??
-        rawRoom?.participantId ??
-        rawRoom?.userId ??
-        rawRoom?.receiverId ??
-        rawRoom?.user?.id ??
-        rawRoom?.receiver?.id ??
-        rawRoom?.targetUser?.id ??
-        rawRoom?.otherUser?.id ??
-        nestedUser?.id ??
-        null;
-    const targetUserEmail = 
-        nestedUser?.email ??
-        rawRoom?.targetUserEmail ??
-        rawRoom?.user?.email ??
-        rawRoom?.receiver?.email ??
-        rawRoom?.otherUser?.email ??
-        rawRoom?.email ??
-        null;
-    const lastMessageObject = rawRoom?.lastMessage;
-    const resolvedOpponentName = getOpponentNameFromRoomName(
-        rawRoom?.roomName ?? rawRoom?.name ?? rawRoom?.userName,
-        currentUserName
-    );
-
-    return {
-        ...rawRoom,
-        targetUserId,
-        targetUserEmail,
-        roomId,
-        targetUserName:
-            nestedUser?.userName ??
-            nestedUser?.name ??
-            rawRoom?.receiverName ??
-            rawRoom?.otherUserName ??
-            rawRoom?.targetUserName ??
-            resolvedOpponentName ??
-            rawRoom?.userName ??
-            rawRoom?.name ??
-            "User",
-        avatarUrl:
-            rawRoom?.targetAvatarUrl ??
-            rawRoom?.avatarUrl ??
-            rawRoom?.userAvatar ??
-            rawRoom?.receiverAvatar ??
-            rawRoom?.roomAvatar ??
-            nestedUser?.avatarUrl ??
-            nestedUser?.userAvatar ??
-            "/avatar.jpg",
-        targetAvatarUrl:
-            rawRoom?.targetAvatarUrl ??
-            rawRoom?.avatarUrl ??
-            rawRoom?.userAvatar ??
-            rawRoom?.receiverAvatar ??
-            rawRoom?.roomAvatar ??
-            nestedUser?.avatarUrl ??
-            nestedUser?.userAvatar ??
-            "/avatar.jpg",
-        lastMessage:
-            rawRoom?.lastMessageContent ??
-            lastMessageObject?.content ??
-            (typeof lastMessageObject === "string" ? lastMessageObject : null) ??
-            rawRoom?.content ??
-            "Chua co tin nhan",
-        lastMessageTime: 
-            rawRoom?.lastMessageTime ??
-            lastMessageObject?.createdAt ??
-            rawRoom?.lastMessageCreatedAt ??
-            rawRoom?.createdAt ??
-            null,
-        lastMessageSenderId:
-            rawRoom?.lastMessageSenderId ??
-            lastMessageObject?.senderId ??
-            rawRoom?.lastMessageSenderId ??
-            null,
-        isLastMessageSeen: rawRoom?.isLastMessageSeen ?? false,
-        unreadCount: rawRoom?.unreadCount ?? 0,
-        isOnline: nestedUser?.isOnline ?? rawRoom?.isOnline ?? false,
-        messages: Array.isArray(rawRoom?.messages) ? rawRoom.messages : [],
-    };
-}
-
-
+import { DashRing } from "../LoadingUI";
+import { toast } from "sonner";
+import { useRoomList } from "../../hooks/useRoomList";
 
 export default function LeftSidebar({ avatarUrl, name, email }) {
  
     const menuRef = useRef();
+    const settingsMenuRef = useRef(); // Khai báo tham chiếu cho menu cài đặt mới
     const profileRef = useRef();
     const logoutRef = useRef();
+    const contactRef = useRef();
+    const [contactRefreshKey, setContactRefreshKey] = useState(0);
     const { selectedUser, setSelectedUser, currentUser, updateUserStatus } = useChat();
     const { subscribe, publish, isConnected } = useChatSocket();
-    const [users, setUsers] = useState([]);
-    const prevSelectedRoomIdRef = useRef(null);
+
+    const { users, setUsers, urlRoomId, navigate } = useRoomList(
+        currentUser, selectedUser, setSelectedUser, updateUserStatus, isConnected, subscribe, publish
+    );
 
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const searchTimeoutRef = useRef(null);
 
-    const navigate = useNavigate();
-    const { roomId: urlRoomId } = useParams();
+    // Quản lý tab
+    const [activeTab, setActiveTab] = useState("ưu-tiên");
 
-    // Effect to auto-select room from URL when users list is loaded
-    useEffect(() => {
-        if (users.length > 0 && urlRoomId) {
-            const roomToSelect = users.find(u => 
-                String(u.roomId) === String(urlRoomId) || 
-                String(u.targetUserId) === String(urlRoomId) || 
-                String(u.id) === String(urlRoomId)
-            );
-            
-            if (roomToSelect) {
-                const isCurrentlySelected = 
-                    (selectedUser?.roomId === roomToSelect.roomId && roomToSelect.roomId) || 
-                    (selectedUser?.id === roomToSelect.id);
-                    
-                if (!isCurrentlySelected) {
-                    setSelectedUser(roomToSelect);
-                }
-            } else {
-                // If it's not in the list, but it's a URL, we might want to fetch it, 
-                // but for now we just try to select if it exists.
-            }
-        }
-    }, [users, urlRoomId, selectedUser, setSelectedUser]);
-
+    // Xử lý mở Menu khi click Avatar
     function handleClick() {
         menuRef.current.open();
-        }
+    }
 
-    // Cập nhật danh sách users khi selectedUser thay đổi (lastMessage hoặc lastMessageTime)
-    useEffect(() => {
-        if (!selectedUser) return;
-
-        setUsers(prevUsers =>
-            prevUsers.map(user =>
-                (user.roomId === selectedUser.roomId || user.id === selectedUser.id || user.targetUserId === selectedUser.id || user.targetUserId === selectedUser.targetUserId)
-                    ? {
-                        ...user,
-                        lastMessage: selectedUser.lastMessage ?? user.lastMessage,
-                        lastMessageTime: selectedUser.lastMessageTime ?? user.lastMessageTime,
-                        lastMessageSenderId: selectedUser.lastMessageSenderId ?? user.lastMessageSenderId,
-                    }
-                    : user
-            )
-        );
-    }, [selectedUser?.lastMessage, selectedUser?.lastMessageTime, selectedUser?.lastMessageSenderId, selectedUser?.isLastMessageSeen, selectedUser?.id, selectedUser?.roomId]);
-
-    // Handle Enter/Leave Room for WebSocket
-    useEffect(() => {
-        const roomId = selectedUser?.roomId || selectedUser?.id;
-        let interval;
-        if (isConnected && currentUser?.id) {
-            if (prevSelectedRoomIdRef.current && prevSelectedRoomIdRef.current !== roomId) {
-                publish("/app/room/leave", { userId: currentUser.id, roomId: prevSelectedRoomIdRef.current });
-            }
-            if (roomId) {
-                publish("/app/room/enter", { userId: currentUser.id, roomId });
-                // Reset unread count locally when entering
-                setUsers(prevUsers => prevUsers.map(user => 
-                    (user.roomId === roomId || user.id === roomId) 
-                        ? { ...user, unreadCount: 0 } 
-                        : user
-                ));
-
-                // Heartbeat to keep activeRoom TTL alive in Redis (expires in 60s)
-                interval = setInterval(() => {
-                    publish("/app/room/enter", { userId: currentUser.id, roomId });
-                }, 45000);
-            }
-            prevSelectedRoomIdRef.current = roomId;
-        }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [selectedUser?.roomId, selectedUser?.id, isConnected, currentUser?.id, publish]);
-
-    useEffect(() => {
-        return () => {
-            if (prevSelectedRoomIdRef.current && currentUser?.id && isConnected) {
-                publish("/app/room/leave", { userId: currentUser.id, roomId: prevSelectedRoomIdRef.current });
-            }
-        };
-    }, [currentUser?.id, isConnected, publish]);
-
-     // Subscribe vào user-status topic để nhận update online/offline
-    useEffect(() => {
-        if (!isConnected) return;
-       
-        const subscription = subscribe('/topic/user-status', (message) => {
-            try {
-                const data = typeof message === 'string' ? JSON.parse(message) : message;
-                console.log('User status updated:', data);
-                // Cập nhật trạng thái vào context
-                updateUserStatus(data.email.toLowerCase(), data.isOnline, data.userId);
-                
-                // Cập nhật selectedUser nếu đang chat với người này
-                setSelectedUser(prevSelected => {
-                    if (prevSelected && (
-                        String(prevSelected.targetUserId) === String(data.userId) ||
-                        String(prevSelected.id) === String(data.userId) ||
-                        prevSelected.email?.toLowerCase() === data.email.toLowerCase() ||
-                        prevSelected.targetUserEmail?.toLowerCase() === data.email.toLowerCase()
-                    )) {
-                        return { ...prevSelected, isOnline: data.isOnline };
-                    }
-                    return prevSelected;
-                });
-
-                // Cập nhật lại danh sách users
-                setUsers(prevUsers =>
-                    prevUsers.map(user =>
-                        String(user.targetUserId) === String(data.userId) || 
-                        String(user.id) === String(data.userId) ||
-                        user.email?.toLowerCase() === data.email.toLowerCase() || 
-                        user.targetUserEmail?.toLowerCase() === data.email.toLowerCase()
-                            ? { ...user, isOnline: data.isOnline }
-                            : user
-                    )
-                );
-            } catch (error) {
-                console.error('Error parsing user status message:', error);
-            }
-        });
-
-        return () => {
-            subscription?.unsubscribe();
-        };
-    }, [isConnected, subscribe, updateUserStatus]);
-
-    // Subscribe vào topic cập nhật thông tin phòng (có tin nhắn mới, cập nhật unreadCount)
-    useEffect(() => {
-        if (!currentUser?.id || !isConnected) return;
-        
-        const roomUpdateSub = subscribe(`/topic/user/${currentUser.id}/rooms`, (message) => {
-            try {
-                const updatedRoom = typeof message === 'string' ? JSON.parse(message) : message;
-                const normalizedRoom = normalizeChatRoom(updatedRoom, currentUser.id, currentUser.userName);
-                
-                setUsers(prevUsers => {
-                    // Cập nhật room có sẵn hoặc thêm room mới lên đầu
-                    const index = prevUsers.findIndex(u => u.roomId === normalizedRoom.roomId || u.id === normalizedRoom.id);
-                    let newUsers = [...prevUsers];
-                    if (index !== -1) {
-                        newUsers[index] = { ...newUsers[index], ...normalizedRoom };
-                        // Đưa room vừa có tin nhắn lên đầu
-                        const updated = newUsers.splice(index, 1)[0];
-                        newUsers.unshift(updated);
-                    } else {
-                        newUsers.unshift(normalizedRoom);
-                    }
-                    return newUsers;
-                });
-            } catch (e) {
-                console.error("Error parsing room update:", e);
-            }
-        });
-
-        return () => {
-            roomUpdateSub?.unsubscribe();
-        };
-    }, [isConnected, subscribe, currentUser?.id]);
+    // Xử lý mở Menu Cài đặt khi click icon Bánh răng
+    function handleSettingsClick() {
+        settingsMenuRef.current.open();
+    }
 
     function handleSelectUser(user) {
         setSelectedUser((prevUser) => {
@@ -343,14 +61,12 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
             return user;
         });
 
-        // Push URL to reflect the selected room
         const targetId = user?.roomId || user?.targetUserId || user?.id;
         if (targetId && String(urlRoomId) !== String(targetId)) {
             navigate(`/c/${targetId}`);
         }
     }
 
-    // Handle search input with debounce
     const handleSearchChange = (e) => {
         const query = e.target.value;
         setSearchQuery(query);
@@ -375,7 +91,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
             } finally {
                 setIsSearching(false);
             }
-        }, 500); // 500ms debounce
+        }, 500);
     };
 
     const handleSelectSearchResult = (searchedUser) => {
@@ -398,51 +114,83 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
             handleSelectUser(fakeRoom);
         }
         
-        // Clear search after selecting
         setSearchQuery("");
         setSearchResults([]);
     };
-
-    useEffect(() => {
-        // if (!currentUser?.id) {
-        //     setUsers([]);
-        //     return;
-        // }
-
-        api.get(`/chat-rooms/user/${currentUser?.id}`)
-            .then(res => {
-                console.log(res.data);
-                const normalizedRooms = Array.isArray(res.data?.data)
-                    ? res.data.data.map((room) => normalizeChatRoom(room, currentUser.id, currentUser.userName))
-                    : [];
-                    console.log("Normalized rooms:", normalizedRooms);
-                setUsers(normalizedRooms);
-            })
-            .catch((error) => {
-                console.error(error.response?.data ?? error);
-                if (error.response?.status === 401) {
-                    localStorage.removeItem('token');
-                }
-            });
-    }, [currentUser?.id]);
 
     const sortedUsers = [...users].sort((a, b) => {
         const aHasUnread = (a.unreadCount > 0) ? 1 : 0;
         const bHasUnread = (b.unreadCount > 0) ? 1 : 0;
         
         if (aHasUnread !== bHasUnread) {
-            return bHasUnread - aHasUnread; // Ưu tiên chưa đọc lên trước
+            return bHasUnread - aHasUnread;
         }
         
-        // Nếu cùng trạng thái đọc -> Sắp xếp theo thời gian tin nhắn mới nhất
         const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
         const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
         return timeB - timeA;
     });   
 
+      
+    const priorityUsers = sortedUsers.filter(user => {   
+        if (user.id > 0) return true;    
+        if (user.friendshipStatus === "PENDING" && user.friendshipSenderId !== currentUser?.id) {
+            return false;
+        }        
+        const hasRealRoom = sortedUsers.some(u => String(u.targetUserId) === String(user.targetUserId) && u.id > 0);
+        if (hasRealRoom) {
+            return false;
+        }
+        return true;
+    });
+
+    const friendRequests = sortedUsers.filter(user => 
+        user.friendshipStatus === "PENDING" && 
+        user.friendshipSenderId !== currentUser?.id && 
+        user.id < 0
+    );
+
+    // Đồng ý kết bạn từ tab Lời mời
+    const handleAcceptRequest = async (e, user) => {
+        e.stopPropagation();
+        try {
+            const res = await api.post("/friendships/accept", null, {
+                params: { senderId: user.friendshipSenderId }
+            });
+            if (res.data?.status === 200) {
+                toast.success("Đã đồng ý kết bạn!");
+            }
+        } catch (error) {
+            console.error("Lỗi đồng ý kết bạn:", error);
+            toast.error("Đồng ý kết bạn thất bại!");
+        }
+    };
+
+    // Từ chối kết bạn từ tab Lời mời
+    const handleDeclineRequest = async (e, user) => {
+        e.stopPropagation();
+        try {
+            const res = await api.post("/friendships/decline", null, {
+                params: { senderId: user.friendshipSenderId }
+            });
+            if (res.data?.status === 200) {
+                toast.success("Đã từ chối lời mời kết bạn!");
+            }
+        } catch (error) {
+            console.error("Lỗi từ chối kết bạn:", error);
+            toast.error("Từ chối kết bạn thất bại!");
+        }
+    };
+
+    // Hàm mở dialog danh bạ kèm tăng refreshKey
+    const openContactDialog = () => {
+        setContactRefreshKey(k => k + 1);
+        contactRef.current.open();
+    };
+
     return (
         <>
-            {/* Menu Dialog chính */}
+            {/* 1. Menu Dialog chính (MỞ KHI ẤN AVATAR - Định vị ở góc trên, cạnh Avatar) */}
             <DialogWindow
                 dialogForm={
                     <Menu 
@@ -455,10 +203,23 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                     />
                 }
                 ref={menuRef}
-                position="ms-20"
+                position="top-[16px] left-[60px] m-0 p-0 bg-transparent border-none overflow-visible"
             />
 
-            {/* Dialog Thông tin cá nhân (Đồng cấp) */}
+            {/* 2. Menu Dialog Cài đặt (MỞ KHI ẤN ICON BÁNH RĂNG - Định vị ở góc dưới, ngay trên icon Bánh răng) */}
+            <DialogWindow
+                dialogForm={
+                    <SettingsMenu 
+                        openProfile={() => profileRef.current.open()}
+                        openLogout={() => logoutRef.current.open()}
+                        closeMenu={() => settingsMenuRef.current.close()}
+                    />
+                }
+                ref={settingsMenuRef}
+                position="fixed bottom-[0px] left-[60px] mt-88 p-0 bg-transparent border-none overflow-visible"
+            />
+
+            {/* Dialog Thông tin cá nhân */}
             <DialogWindow 
                 dialogForm={
                     <Profile 
@@ -472,7 +233,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                 position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[400px] max-w-[90vw] shadow-2xl`} 
             />
 
-            {/* Dialog Xác nhận đăng xuất (Đồng cấp) */}
+            {/* Dialog Xác nhận đăng xuất */}
             <DialogWindow 
                 dialogForm={
                     <ConfirmLogout 
@@ -482,69 +243,226 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                 ref={logoutRef} 
                 position={`m-auto`}
             />
-            <div className="flex flex-col w-92 bg-white p-0 gap-2 border-r border-gray-200 h-screen">
-                <div className="flex bg-white-100 p-3 justify-start items-center gap-3 border-b border-gray-300">
-                    <img
-                        onClick={handleClick}
-                        src={currentUser?.avatarUrl || avatarUrl || "/avatar.jpg"}
-                        alt={currentUser?.userName || name}
-                        className="cursor-pointer w-15 h-15 border-blue-700 border-4 hover:border transition-ease-in-out duration-300 rounded-full object-cover"
+                        {/* Dialog Danh bạ bạn bè */}
+            <DialogWindow 
+                dialogForm={
+                    <ContactDialog 
+                        refreshKey={contactRefreshKey}
+                        onClose={() => contactRef.current.close()} 
                     />
-                    <div className="focus-within:ring-2 focus-within:ring-blue-500 flex items-center bg-gray-200 p-1 rounded-md gap-1">
-                        <Search className="text-gray-400 ms-1" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            className="outline-none w-full text-sm font-medium h-8 p-2 bg-gray-200 rounded-md text-gray-500 placeholder:text-gray-400"
-                            placeholder="Tên hoặc email"
-                        />
-                    </div>
-                    <UserPlus className="text-gray-400 hover:text-gray-600 cursor-pointer" />
-                    <Users2 className="text-gray-400 hover:text-gray-600 cursor-pointer" />
-                </div>
-                <div className="overflow-y-auto">
-                    {searchQuery.trim() ? (
-                        isSearching ? (
-                            <div className="p-4 text-center text-sm text-gray-500">Đang tìm kiếm...</div>
-                        ) : searchResults.length > 0 ? (
-                            <>
-                                <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase bg-gray-50">Kết quả tìm kiếm</div>
-                                {searchResults.map((user) => (
-                                    <div
-                                        key={user.id}
-                                        onClick={() => handleSelectSearchResult(user)}
-                                        className="w-full flex items-center gap-4 p-2 rounded-md cursor-pointer transition-colors bg-white hover:bg-gray-100"
-                                    >
-                                        <img src={user.avatarUrl || "/avatar.jpg"} alt={user.userName} className="w-12 h-12 rounded-full object-cover border border-gray-300" />
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="text-sm font-medium text-gray-900 truncate">{user.userName}</h3>
-                                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </>
-                        ) : (
-                            <div className="p-4 text-center text-sm text-gray-500">Không tìm thấy ai</div>
-                        )
-                    ) : (
-                        sortedUsers.map((user, index) => (
-                            <ItemUser
-                                key={user.id ?? user.roomId ?? index}
-                                user={user}
-                                currentUserId={currentUser?.id}
-                                currentUserName={currentUser?.userName || "Bạn"}
-                                targetUserName={user.targetUserName || "User"}
-                                onSelect={handleSelectUser}
-                                isActive={
-                                    (selectedUser?.roomId && user.roomId && selectedUser.roomId === user.roomId) ||
-                                    (selectedUser?.id && user.id && selectedUser.id === user.id)
-                                }
+                } 
+                ref={contactRef} 
+                position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[450px] max-w-[90vw] shadow-2xl`} 
+            />
+            {/* Bố cục cấu trúc chia đôi */}
+            <div className="flex w-98 bg-white p-0 border-r border-gray-200 h-screen overflow-hidden select-none">
+                
+                {/* 1. THANH DỌC MÀU XANH (Left-most Blue Sidebar) */}
+                <div className="w-14 bg-[#0068ff] flex flex-col items-center justify-between py-4 text-white flex-shrink-0 z-10 shadow-md">
+                    {/* Phần trên */}
+                    <div className="flex flex-col items-center w-full">
+                        {/* Click Avatar -> Mở menu góc trên */}
+                        <div className="relative group cursor-pointer mb-6" onClick={handleClick}>
+                            <img
+                                src={currentUser?.avatarUrl || avatarUrl || "/avatar.jpg"}
+                                alt={currentUser?.userName || name}
+                                className="w-11 h-11 rounded-full border-2 border-white/30 object-cover hover:border-white hover:scale-105 transition-all duration-200"
                             />
-                        ))
-                    )}
+                            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border border-[#0068ff] rounded-full"></div>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-1 w-full ">
+                            <button className="cursor-pointer relative p-3 w-full flex justify-center text-white bg-black/15 hover:bg-white/20 transition-all duration-200">
+                                <MessageSquare className="w-5.5 h-5.5" />
+                                { sortedUsers.reduce((sum, u) => sum + (u.unreadCount || 0), 0) > 0 &&
+                                <span className="absolute top-1.5 right-1.5 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-[#0068ff] shadow-sm leading-none">
+                                    {sortedUsers.reduce((sum, u) => sum + (u.unreadCount || 0), 0)}
+                                </span>
+                                }   
+                            </button>
+                            <button onClick={openContactDialog} className="cursor-pointer p-3 w-full flex justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all duration-200" title="Danh bạ">
+                                <Contact className="w-5.5 h-5.5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Phần dưới */}
+                    <div className="flex flex-col items-center gap-1 w-full">
+                       
+                        {/* Click Bánh răng -> Mở menu cài đặt góc dưới */}
+                        <button onClick={handleSettingsClick} className=" w-full flex justify-center text-white/70 hover:text-white cursor-pointer transition-all duration-200 mt-4 border-t border-white/10 pt-4" title="Cài đặt">
+                            <Settings className="w-7 h-7" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* 2. KHU VỰC TÌM KIẾM & DANH SÁCH CHAT */}
+                <div className="flex-1 bg-white flex flex-col h-full overflow-hidden">
+                    <div className="p-3 flex items-center gap-2">
+                        <div className="flex-1 flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-gray-300 px-2 py-1 rounded-md gap-1 transition-all">
+                            <Search className="text-gray-400 w-4 h-4 ms-1" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={handleSearchChange}
+                                className="outline-none w-full text-xs font-medium bg-transparent text-gray-700 placeholder:text-gray-400"
+                                placeholder="Tìm kiếm"
+                            />
+                        </div>
+                        <button
+                         onClick={openContactDialog}
+                         className="cursor-pointer p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-700" title="Thêm bạn">
+                            <UserPlus className="w-4.5 h-4.5" />
+                        </button>
+                        <button className="cursor-pointer p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-700 relative" title="Tạo nhóm">
+                            <Users2 className="w-4.5 h-4.5" />
+                            <span className="absolute top-[6px] left-[21px] text-gray-500 text-[13px] rounded-full font-bold leading-none">
+                                +
+                            </span>
+                        </button>
+                    </div>
+
+                                        <div className="px-3 pb-2 flex items-center justify-between border-b border-gray-200">
+                        <div className="flex items-center gap-4 text-xs font-semibold">
+                            <button 
+                                onClick={() => setActiveTab("ưu-tiên")} 
+                                className={`pb-1.5 relative transition-colors ${activeTab === "ưu-tiên" ? "text-blue-600 font-bold" : "text-gray-500 hover:text-gray-700"}`}
+                            >
+                                Ưu tiên
+                                {activeTab === "ưu-tiên" && (
+                                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
+                                )}
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab("lời-mời")} 
+                                className={`pb-1.5 relative transition-colors flex items-center gap-1 ${activeTab === "lời-mời" ? "text-blue-600 font-bold" : "text-gray-500 hover:text-gray-700"}`}
+                            >
+                                Lời mời
+                                {friendRequests.length > 0 && (
+                                    <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-full font-bold leading-none animate-pulse">
+                                        {friendRequests.length}
+                                    </span>
+                                )}
+                                {activeTab === "lời-mời" && (
+                                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
+                                )}
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] font-semibold text-gray-500">
+                            <button className="p-0.5 hover:bg-gray-100 rounded-md transition-colors">
+                                <MoreHorizontal className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto p-1">
+                        {searchQuery.trim() ? (
+                            <SearchResultsList 
+                                isSearching={isSearching} 
+                                searchResults={searchResults} 
+                                onSelectSearchResult={handleSelectSearchResult} 
+                            />
+                        ) : activeTab === "ưu-tiên" ? (
+                            <PriorityRoomList 
+                                priorityUsers={priorityUsers} 
+                                currentUser={currentUser} 
+                                selectedUser={selectedUser} 
+                                onSelectUser={handleSelectUser} 
+                            />
+                        ) : (
+                            <FriendRequestList 
+                                friendRequests={friendRequests} 
+                                onAccept={handleAcceptRequest} 
+                                onDecline={handleDeclineRequest} 
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
         </>
+    );
+}
+
+
+
+function SearchResultsList({ isSearching, searchResults, onSelectSearchResult }) {
+    if (isSearching) return <DashRing className="w-6 h-6 mx-auto my-4 text-blue-400" />;
+    if (searchResults.length === 0) return <div className="p-4 text-center text-xs text-gray-400">Không tìm thấy ai</div>;
+
+    return (
+        <>
+            <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase bg-gray-50">Kết quả tìm kiếm</div>
+            {searchResults.map((user) => (
+                <div
+                    key={user.id}
+                    onClick={() => onSelectSearchResult(user)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-md cursor-pointer transition-colors bg-white hover:bg-gray-100 border-b border-gray-50"
+                >
+                    <img src={user.avatarUrl || "/avatar.jpg"} alt={user.userName} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                    <div className="flex-1 min-w-0">
+                        <h3 className="text-xs font-semibold text-gray-800 truncate">{user.userName}</h3>
+                        <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+                    </div>
+                </div>
+            ))}
+        </>
+    );
+}
+
+function PriorityRoomList({ priorityUsers, currentUser, selectedUser, onSelectUser }) {
+    if (priorityUsers.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 h-full gap-2 bg-gray-50/50 mt-10 rounded-2xl mx-2">
+                <MessageSquare className="w-10 h-10 text-gray-300 stroke-[1.5]" />
+                <p className="text-xs font-medium">Chưa có hội thoại nào</p>
+            </div>
+        );
+    }
+    return priorityUsers.map((user, index) => (
+        <ItemUser
+            key={user.id ?? user.roomId ?? index}
+            user={user}
+            currentUserId={currentUser?.id}
+            currentUserName={currentUser?.userName || "Bạn"}
+            targetUserName={user.targetUserName || "User"}
+            onSelect={onSelectUser}
+            isActive={
+                (selectedUser?.roomId && user.roomId && selectedUser.roomId === user.roomId) ||
+                (selectedUser?.id && user.id && selectedUser.id === user.id)
+            }
+        />
+    ));
+}
+
+function FriendRequestList({ friendRequests, onAccept, onDecline }) {
+    if (friendRequests.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 h-full gap-2 bg-gray-50/50 mt-10 rounded-2xl mx-2">
+                <UserPlus className="w-10 h-10 text-gray-300 stroke-[1.5]" />
+                <p className="text-xs font-medium">Chưa có lời mời kết bạn nào</p>
+            </div>
+        );
+    }
+    return (
+        <div className="flex flex-col py-2">
+            {friendRequests.map((user, index) => (
+                <div key={user.id ?? index} className="flex flex-col p-3.5 rounded-2xl transition-all duration-200 bg-blue-50/30 hover:bg-blue-50/60 border border-blue-100/50 my-1.5 mx-3 shadow-xs hover:shadow-sm gap-3">
+                    <div className="flex items-start gap-3">
+                        <div className="relative flex-shrink-0">
+                            <img src={user.targetAvatarUrl || "/avatar.jpg"} alt={user.targetUserName} className="w-12 h-12 rounded-full object-cover border-2 border-white bg-white shadow-xs ring-1 ring-blue-100/80" />
+                            <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${user.isOnline ? "bg-green-500" : "bg-gray-400"}`}></span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-bold text-gray-800 break-words whitespace-normal leading-tight">{user.targetUserName || "Chưa có tên"}</h3>
+                            <p className="text-[11px] text-blue-600 font-semibold mt-1 break-words whitespace-normal leading-relaxed">{user.targetUserName || "Chưa có tên"} đã gửi lời kết bạn với bạn</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <button onClick={(e) => onAccept(e, user)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.97] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer text-center">Chấp nhận</button>
+                        <button onClick={(e) => onDecline(e, user)} className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 hover:text-red-600 active:scale-[0.97] text-gray-600 text-xs font-bold rounded-xl transition-all border border-gray-200 cursor-pointer text-center">Từ chối</button>
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }

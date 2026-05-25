@@ -19,11 +19,7 @@ public class MessageRestController {
             @PathVariable Long roomId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        try {
-            List<MessageDTO> messages = messageService.getMessagesByRoomId(roomId, page, size);
-            return ResponseEntity.ok(new ResponseApi<>(200, "Success", messages));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseApi<>(400, e.getMessage(), null));
-        }
+        List<MessageDTO> messages = messageService.getMessagesByRoomId(roomId, page, size);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Success", messages));
     }
 }

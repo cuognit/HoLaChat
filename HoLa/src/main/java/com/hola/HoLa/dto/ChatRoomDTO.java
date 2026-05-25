@@ -17,4 +17,8 @@ public class ChatRoomDTO {
     private Long lastSenderId;
     private Integer unreadCount;
     private Boolean isLastMessageSeen;
+    
+    // Thuộc tính phục vụ Real-time Friend Request
+    private String friendshipStatus;
+    private Long friendshipSenderId;
 }

@@ -5,6 +5,7 @@ import com.hola.HoLa.model.ChatRoom;
 import com.hola.HoLa.model.RoomMember;
 import com.hola.HoLa.model.User;
 import java.util.List;
+import java.util.stream.Collectors;
 import com.hola.HoLa.repository.ChatRoomRepository;
 import com.hola.HoLa.repository.RoomMemberRepository;
 import com.hola.HoLa.repository.UserRepository;
@@ -60,19 +61,64 @@ public class ChatRoomService {
         return room;
     }
 
+    @Autowired
+    private com.hola.HoLa.repository.FriendshipRepository friendshipRepository;
     @Transactional(readOnly = true)
     public List<ChatRoomDTO> getRoomsByUserId(Long userId) {
         if (userId == null) {
             throw new RuntimeException("User id is required");
         }
-
         userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return roomMemberRepository.findRoomsByUserId(userId)
+        // 1. Lấy danh sách các phòng chat thực tế đã kích hoạt
+        List<ChatRoomDTO> activeRooms = roomMemberRepository.findRoomsByUserId(userId)
                 .stream()
                 .map(room -> toDto(room, userId))
-                .toList();
+                .collect(Collectors.toList());
+            // 2. Lấy các lời mời kết bạn PENDING liên quan đến người dùng này
+        List<com.hola.HoLa.model.Friendship> pendingFriendships = friendshipRepository.findPendingRequests(userId);
+        
+        List<ChatRoomDTO> friendshipDtos = pendingFriendships.stream()
+                .map(friendship -> {
+                    ChatRoomDTO dto = new ChatRoomDTO();
+                    // Đặt ID là số âm từ ID của Friendship để phân biệt rõ ràng với ID thực của ChatRoom
+                    dto.setId(-friendship.getId()); 
+                    
+                    User targetUser = friendship.getSender().getId().equals(userId) 
+                            ? friendship.getReceiver() 
+                            : friendship.getSender();
+                            
+                    dto.setRoomName(targetUser.getUserName());
+                    dto.setIsGroup(false);
+                    dto.setAvatarUrl(targetUser.getAvatarUrl());
+                    dto.setTargetUserId(targetUser.getId());
+                    dto.setTargetUserName(targetUser.getUserName());
+                    dto.setTargetAvatarUrl(targetUser.getAvatarUrl());
+                    dto.setIsOnline(targetUser.getIsOnline());
+                    
+                    dto.setFriendshipStatus(friendship.getStatus().name());
+                    dto.setFriendshipSenderId(friendship.getSender().getId());
+                    
+                    if (friendship.getSender().getId().equals(userId)) {
+                        dto.setLastMessage("Đang chờ chấp nhận");
+                        dto.setLastSenderId(userId);
+                        dto.setUnreadCount(0);
+                    } else {
+                        dto.setLastMessage("Lời mời kết bạn");
+                        dto.setLastSenderId(friendship.getSender().getId());
+                        dto.setUnreadCount(1); // Nổi bật thông báo lời mời mới
+                    }
+                    
+                    dto.setLastMessageTime(friendship.getUpdatedAt());
+                    dto.setIsLastMessageSeen(false);
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+                
+        // Gộp chung hai danh sách lại để đẩy lên giao diện
+        activeRooms.addAll(friendshipDtos);
+        return activeRooms;
     }
 
     private ChatRoom createPrivateRoom(Long user1Id, Long user2Id) {
@@ -129,6 +175,16 @@ public class ChatRoomService {
                         // Check real-time status from Redis
                         RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + targetUser.getEmail().toLowerCase());
                         dto.setIsOnline("online".equals(statusBucket.get()));
+
+                        // Lấy trạng thái kết bạn thực tế từ Database để gán vào DTO
+                        friendshipRepository.findRelation(currentUserId, targetUser.getId())
+                                .ifPresentOrElse(f -> {
+                                    dto.setFriendshipStatus(f.getStatus().name());
+                                    dto.setFriendshipSenderId(f.getSender().getId());
+                                }, () -> {
+                                    dto.setFriendshipStatus("NONE");
+                                    dto.setFriendshipSenderId(null);
+                                });
                     });
         }
 

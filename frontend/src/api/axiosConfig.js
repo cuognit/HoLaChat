@@ -1,9 +1,9 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// 1. Tạo một instance riêng để không ảnh hưởng đến các request khác nếu cần
 const api = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: API_BASE_URL,
     withCredentials: true // gửi kèm Cookie Refresh Token
 });
 
@@ -36,7 +36,7 @@ api.interceptors.response.use(
             originalRequest._retry = true;
             try {
                 // Gọi API refresh để lấy Access Token mới
-                const res = await axios.post("http://localhost:8080/api/auth/refresh", {}, {
+                const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, {
                     withCredentials: true
                 });
                 const newAccessToken = res.data.data;

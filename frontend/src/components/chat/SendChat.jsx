@@ -87,8 +87,9 @@ export default function SendChat() {
             }
 
             const currentMessages = Array.isArray(prevUser.messages) ? prevUser.messages : [];
+            
+            // Nếu đã có tin nhắn với id thật này → bỏ qua
             const alreadyExists = currentMessages.some((message) => message.id === normalizedMessage.id);
-
             if (alreadyExists) {
                 return {
                     ...prevUser,
@@ -96,8 +97,26 @@ export default function SendChat() {
                 };
             }
 
+            // Nếu tồn tại tin nhắn local tạm do chính mình gửi với cùng nội dung → thay thế nó
+            const localIndex = currentMessages.findLastIndex(
+                (msg) =>
+                    typeof msg.id === 'string' &&
+                    msg.id.startsWith('local-') &&
+                    msg.senderId === normalizedMessage.senderId &&
+                    msg.content === normalizedMessage.content
+            );
+
             const isSentByMe = normalizedMessage.senderId === currentUserIdRef.current;
             const isSeen = isSentByMe ? false : true;
+
+            let nextMessages;
+            if (localIndex !== -1) {
+                // Thay thế local message bằng tin thật từ server
+                nextMessages = [...currentMessages];
+                nextMessages[localIndex] = normalizedMessage;
+            } else {
+                nextMessages = [...currentMessages, normalizedMessage];
+            }
 
             return {
                 ...prevUser,
@@ -106,7 +125,7 @@ export default function SendChat() {
                 lastMessageTime: normalizedMessage.createdAt,
                 lastMessageSenderId: normalizedMessage.senderId,
                 isLastMessageSeen: isSeen,
-                messages: [...currentMessages, normalizedMessage],
+                messages: nextMessages,
             };
         });
     }
