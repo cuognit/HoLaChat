@@ -202,8 +202,8 @@ export default function DisplayMessage() {
     return (
         <div className="relative flex-1 flex flex-col overflow-hidden">
             <div ref={containerRef} className="bg-gray-100 flex-1 px-4 overflow-y-auto flex flex-col-reverse relative">
-                {/* Cảm biến vị trí dưới cùng */}
-                <div ref={bottomObserverTarget} className="h-1 w-full shrink-0"></div>
+                {/* Cảm biến vị trí dưới cùng kiêm khoảng đệm 24px */}
+                <div ref={bottomObserverTarget} className="h-6 w-full shrink-0"></div>
 
                 {isLoadingMessages ? (
                     <div className="flex-1 flex flex-col items-center justify-center gap-2 m-auto"> 
@@ -223,11 +223,20 @@ export default function DisplayMessage() {
                         const nextMessageCreatedAt = nextMessage?.createdAt ?? null;
                         const currentSenderId = message?.senderId ?? null;
                         const nextMessageSenderId = nextMessage?.senderId ?? null;
+                        const previousSenderId = previousMessage?.senderId ?? null;
 
                         const isLastMessage = index === 0; // Because we are iterating the reversed array
                         const isSentByMe = message.whoSend === "self-end";
-                        const showSeenAvatar = isLastMessage && isSentByMe && selectedUser.isLastMessageSeen;
-                        const showSentStatus = isLastMessage && isSentByMe && !selectedUser.isLastMessageSeen;
+
+                        // seenByUsers: lọc bỏ chính mình, chỉ hiện ở tin cuối mình gửi
+                        const seenByUsers = isLastMessage && isSentByMe
+                            ? (selectedUser.seenByUsers ?? []).filter(
+                                u => String(u.userId) !== String(currentUserId)
+                              )
+                            : [];
+
+                        const showSeenAvatar = seenByUsers.length > 0;
+                        const showSentStatus = isLastMessage && isSentByMe && !showSeenAvatar;
                         
                         const currentDateString = message?.createdAt ? new Date(message.createdAt.replace(" ", "T")).toDateString() : null;
                         const previousDateString = previousMessageCreatedAt ? new Date(previousMessageCreatedAt.replace(" ", "T")).toDateString() : null;
@@ -239,15 +248,20 @@ export default function DisplayMessage() {
                                     content={message.content ?? ""}
                                     whoSend={message.whoSend ?? "self-start"}
                                     time={message.time ?? ""}
-                                    avatar={selectedUser.targetAvatarUrl || selectedUser.avatarUrl}
+                                    avatar={selectedUser.isGroup ? message.senderAvatarUrl : (selectedUser.targetAvatarUrl || selectedUser.avatarUrl)}
                                     targetAvatarUrl={selectedUser.targetAvatarUrl || selectedUser.avatarUrl}
                                     showSeenAvatar={showSeenAvatar}
                                     showSentStatus={showSentStatus}
+                                    seenByUsers={seenByUsers}
                                     previousMessageCreatedAt={previousMessageCreatedAt}
                                     currentMessageCreatedAt={currentMessageCreatedAt}
                                     nextMessageCreatedAt={nextMessageCreatedAt}
                                     currentSenderId={currentSenderId}
                                     nextMessageSenderId={nextMessageSenderId}
+                                    previousSenderId={previousSenderId}
+                                    messageType={message.messageType}
+                                    senderName={message.senderName}
+                                    isGroup={selectedUser.isGroup}
                                 />
                                 {showDateDivider && renderDateDivider(formatDateDivider(message.createdAt))}
                             </React.Fragment>

@@ -24,6 +24,7 @@ export function normalizeIncomingMessage(message, currentUserId) {
         time: formatMessageTime(message.createdAt),
         senderId: message.senderId,
         senderName: message.senderName,
+        senderAvatarUrl: message.senderAvatarUrl,
         createdAt: message.createdAt,
         messageType: message.messageType,
     };

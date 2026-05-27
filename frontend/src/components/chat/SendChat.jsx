@@ -72,7 +72,8 @@ export default function SendChat() {
                 lastMessage: content,
                 lastMessageTime: now.toISOString(),
                 lastMessageSenderId: currentUserIdRef.current,
-                isLastMessageSeen: false, // New message is not seen initially
+                isLastMessageSeen: false,
+                seenByUsers: [], // Reset khi gửi tin mới
                 messages: [...currentMessages, localMessage],
             };
         });
@@ -106,8 +107,6 @@ export default function SendChat() {
                     msg.content === normalizedMessage.content
             );
 
-            const isSentByMe = normalizedMessage.senderId === currentUserIdRef.current;
-            const isSeen = isSentByMe ? false : true;
 
             let nextMessages;
             if (localIndex !== -1) {
@@ -124,7 +123,8 @@ export default function SendChat() {
                 lastMessage: normalizedMessage.content,
                 lastMessageTime: normalizedMessage.createdAt,
                 lastMessageSenderId: normalizedMessage.senderId,
-                isLastMessageSeen: isSeen,
+                isLastMessageSeen: false,
+                seenByUsers: [],
                 messages: nextMessages,
             };
         });
@@ -148,10 +148,20 @@ export default function SendChat() {
         });
 
         const nextSeenSubscription = subscribe(`/topic/room/${roomId}/seen`, (actionReq) => {
-            // If the opponent entered the room, they've seen the messages
-            if (actionReq?.userId && actionReq.userId !== currentUserIdRef.current) {
-                setSelectedUser(prev => prev ? { ...prev, isLastMessageSeen: true } : prev);
-            }
+            // actionReq: { roomId, seenByUsers: [{userId, userName, avatarUrl}] }
+            setSelectedUser(prev => {
+                if (!prev) return prev;
+                const seenList = actionReq?.seenByUsers ?? [];
+                // isLastMessageSeen = true nếu có ai khác (không phải mình) đã xem
+                const isSeenByOther = seenList.some(
+                    u => String(u.userId) !== String(currentUserIdRef.current)
+                );
+                return {
+                    ...prev,
+                    seenByUsers: seenList,
+                    isLastMessageSeen: isSeenByOther,
+                };
+            });
         });
 
         if (nextSubscription) {

@@ -1,10 +1,15 @@
 package com.hola.HoLa.service;
 
+import com.hola.HoLa.constant.GroupConstants;
 import com.hola.HoLa.dto.ChatRoomDTO;
+import com.hola.HoLa.dto.CreateGroupRequest;
 import com.hola.HoLa.model.ChatRoom;
+import com.hola.HoLa.model.MemberRole;
 import com.hola.HoLa.model.RoomMember;
 import com.hola.HoLa.model.User;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import com.hola.HoLa.repository.ChatRoomRepository;
 import com.hola.HoLa.repository.RoomMemberRepository;
@@ -35,6 +40,13 @@ public class ChatRoomService {
     @Autowired
     private ChatRedisService chatRedisService;
 
+    @Autowired
+    private com.hola.HoLa.repository.FriendshipRepository friendshipRepository;
+
+    @Autowired
+    @org.springframework.context.annotation.Lazy
+    private MessageService messageService;
+
     @Transactional
     public ChatRoom getOrCreatePrivateRoom(Long user1Id, Long user2Id) {
         validatePrivateChatUsers(user1Id, user2Id);
@@ -43,26 +55,17 @@ public class ChatRoomService {
                 .orElseGet(() -> createPrivateRoom(user1Id, user2Id));
     }
 
-    public ChatRoom getValidatedPrivateRoom(Long roomId, Long senderId, Long receiverId) {
-        validatePrivateChatUsers(senderId, receiverId);
-
+    public ChatRoom getValidatedRoom(Long roomId, Long senderId) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Chat room not found"));
 
-        if (Boolean.TRUE.equals(room.getIsGroup())) {
-            throw new RuntimeException("Room is not a private chat");
-        }
-
-        if (!roomMemberRepository.existsByRoomIdAndUserId(roomId, senderId)
-                || !roomMemberRepository.existsByRoomIdAndUserId(roomId, receiverId)) {
-            throw new RuntimeException("Users do not belong to this room");
+        if (!roomMemberRepository.existsByRoomIdAndUserId(roomId, senderId)) {
+            throw new RuntimeException("User does not belong to this room");
         }
 
         return room;
     }
 
-    @Autowired
-    private com.hola.HoLa.repository.FriendshipRepository friendshipRepository;
     @Transactional(readOnly = true)
     public List<ChatRoomDTO> getRoomsByUserId(Long userId) {
         if (userId == null) {
@@ -77,17 +80,17 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
             // 2. Lấy các lời mời kết bạn PENDING liên quan đến người dùng này
         List<com.hola.HoLa.model.Friendship> pendingFriendships = friendshipRepository.findPendingRequests(userId);
-        
+
         List<ChatRoomDTO> friendshipDtos = pendingFriendships.stream()
                 .map(friendship -> {
                     ChatRoomDTO dto = new ChatRoomDTO();
                     // Đặt ID là số âm từ ID của Friendship để phân biệt rõ ràng với ID thực của ChatRoom
-                    dto.setId(-friendship.getId()); 
-                    
-                    User targetUser = friendship.getSender().getId().equals(userId) 
-                            ? friendship.getReceiver() 
+                    dto.setId(-friendship.getId());
+
+                    User targetUser = friendship.getSender().getId().equals(userId)
+                            ? friendship.getReceiver()
                             : friendship.getSender();
-                            
+
                     dto.setRoomName(targetUser.getUserName());
                     dto.setIsGroup(false);
                     dto.setAvatarUrl(targetUser.getAvatarUrl());
@@ -95,10 +98,10 @@ public class ChatRoomService {
                     dto.setTargetUserName(targetUser.getUserName());
                     dto.setTargetAvatarUrl(targetUser.getAvatarUrl());
                     dto.setIsOnline(targetUser.getIsOnline());
-                    
+
                     dto.setFriendshipStatus(friendship.getStatus().name());
                     dto.setFriendshipSenderId(friendship.getSender().getId());
-                    
+
                     if (friendship.getSender().getId().equals(userId)) {
                         dto.setLastMessage("Đang chờ chấp nhận");
                         dto.setLastSenderId(userId);
@@ -108,17 +111,110 @@ public class ChatRoomService {
                         dto.setLastSenderId(friendship.getSender().getId());
                         dto.setUnreadCount(1); // Nổi bật thông báo lời mời mới
                     }
-                    
+
                     dto.setLastMessageTime(friendship.getUpdatedAt());
                     dto.setIsLastMessageSeen(false);
-                    
+
                     return dto;
                 })
                 .collect(Collectors.toList());
-                
+
         // Gộp chung hai danh sách lại để đẩy lên giao diện
         activeRooms.addAll(friendshipDtos);
         return activeRooms;
+    }
+
+    @Transactional
+    public ChatRoom createGroupRoom(Long creatorId, CreateGroupRequest request) {
+        if (request.getRoomName() == null || request.getRoomName().isBlank()) {
+            throw new RuntimeException("Tên nhóm không được để trống");
+        }
+        if (request.getMemberIds() == null || request.getMemberIds().isEmpty()) {
+            throw new RuntimeException("Cần ít nhất " + GroupConstants.MIN_GROUP_SIZE + " thành viên");
+        }
+        // Deduplicate + loại bỏ creatorId nếu có trong list
+        Set<Long> memberSet = new LinkedHashSet<>(request.getMemberIds());
+        memberSet.remove(creatorId);
+        if (1 + memberSet.size() < GroupConstants.MIN_GROUP_SIZE) {
+            throw new RuntimeException("Nhóm cần ít nhất " + GroupConstants.MIN_GROUP_SIZE + " thành viên");
+        }
+
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new RuntimeException("Người tạo không tồn tại"));
+
+        ChatRoom room = new ChatRoom();
+        room.setIsGroup(true);
+        room.setRoomName(request.getRoomName().trim());
+        room.setAvatarUrl(request.getAvatarUrl());
+        ChatRoom savedRoom = chatRoomRepository.save(room);
+
+        // Creator -> ADMIN
+        RoomMember creatorMember = new RoomMember();
+        creatorMember.setRoom(savedRoom);
+        creatorMember.setUser(creator);
+        creatorMember.setRole(MemberRole.ADMIN);
+        roomMemberRepository.save(creatorMember);
+
+        // Members -> MEMBER
+        for (Long memberId : memberSet) {
+            User member = userRepository.findById(memberId)
+                    .orElseThrow(() -> new RuntimeException("User " + memberId + " không tồn tại"));
+            RoomMember rm = new RoomMember();
+            rm.setRoom(savedRoom);
+            rm.setUser(member);
+            rm.setRole(MemberRole.MEMBER);
+            roomMemberRepository.save(rm);
+        }
+        
+        // Lưu tin nhắn hệ thống khởi tạo nhóm
+        messageService.saveSystemMessage(savedRoom.getId(), creator.getUserName() + " đã tạo nhóm \"" + savedRoom.getRoomName() + "\"");
+        
+        return savedRoom;
+    }
+
+    @Transactional
+    public ChatRoom updateGroupName(Long roomId, Long requesterId, String newName) {
+        if (newName == null || newName.isBlank()) {
+            throw new RuntimeException("Tên nhóm không được để trống");
+        }
+        assertIsMember(roomId, requesterId);
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
+        if (!Boolean.TRUE.equals(room.getIsGroup())) {
+            throw new RuntimeException("Không phải phòng nhóm");
+        }
+        room.setRoomName(newName.trim());
+        return chatRoomRepository.save(room);
+    }
+
+    @Transactional
+    public ChatRoom updateGroupAvatar(Long roomId, Long requesterId, String avatarUrl) {
+        assertIsAdminOfRoom(roomId, requesterId);
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
+        room.setAvatarUrl(avatarUrl);
+        return chatRoomRepository.save(room);
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại"));
+    }
+
+    public List<RoomMember> getRoomMembersByRoomId(Long roomId) {
+        return roomMemberRepository.findByRoomId(roomId);
+    }
+
+    private void assertIsMember(Long roomId, Long userId) {
+        if (!roomMemberRepository.existsByRoomIdAndUserId(roomId, userId)) {
+            throw new RuntimeException("Bạn không thuộc phòng này");
+        }
+    }
+
+    private void assertIsAdminOfRoom(Long roomId, Long userId) {
+        if (!roomMemberRepository.isAdminOfRoom(roomId, userId)) {
+            throw new RuntimeException("Bạn không có quyền thực hiện thao tác này");
+        }
     }
 
     private ChatRoom createPrivateRoom(Long user1Id, Long user2Id) {
@@ -162,8 +258,14 @@ public class ChatRoomService {
         dto.setIsGroup(room.getIsGroup());
         dto.setAvatarUrl(room.getAvatarUrl());
 
-        final Long[] targetIdArr = new Long[1];
-        if (!Boolean.TRUE.equals(room.getIsGroup())) {
+        if (Boolean.TRUE.equals(room.getIsGroup())) {
+            // Group room: set member count + current user role
+            dto.setMemberCount(roomMemberRepository.countByRoomId(room.getId()));
+            roomMemberRepository.findByRoomIdAndUserId(room.getId(), currentUserId)
+                    .ifPresent(rm -> dto.setCurrentUserRole(rm.getRole()));
+        } else {
+            // Private room: set target user info
+            final Long[] targetIdArr = new Long[1];
             roomMemberRepository.findFirstByRoomIdAndUserIdNot(room.getId(), currentUserId)
                     .map(RoomMember::getUser)
                     .ifPresent(targetUser -> {
@@ -172,11 +274,10 @@ public class ChatRoomService {
                         dto.setTargetUserName(targetUser.getUserName());
                         dto.setTargetAvatarUrl(targetUser.getAvatarUrl());
 
-                        // Check real-time status from Redis
-                        RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + targetUser.getEmail().toLowerCase());
+                        RBucket<String> statusBucket = redissonClient.getBucket(
+                                "user:status:" + targetUser.getEmail().toLowerCase());
                         dto.setIsOnline("online".equals(statusBucket.get()));
 
-                        // Lấy trạng thái kết bạn thực tế từ Database để gán vào DTO
                         friendshipRepository.findRelation(currentUserId, targetUser.getId())
                                 .ifPresentOrElse(f -> {
                                     dto.setFriendshipStatus(f.getStatus().name());
@@ -186,25 +287,28 @@ public class ChatRoomService {
                                     dto.setFriendshipSenderId(null);
                                 });
                     });
+
+            if (dto.getLastSenderId() != null && dto.getLastSenderId().equals(currentUserId) && targetIdArr[0] != null) {
+                int opponentUnread = chatRedisService.getUnreadCount(targetIdArr[0], room.getId());
+                dto.setIsLastMessageSeen(opponentUnread == 0);
+            } else {
+                dto.setIsLastMessageSeen(false);
+            }
         }
 
-        // Add last message info
+        // Last message (chung cho cả group và private)
         messageRepository.findFirstByRoomIdOrderByCreatedAtDesc(room.getId())
                 .ifPresent(lastMsg -> {
                     dto.setLastMessage(lastMsg.getContent());
                     dto.setLastMessageTime(lastMsg.getCreatedAt());
-                    dto.setLastSenderId(lastMsg.getSender().getId());
+                    if (lastMsg.getSender() != null) {
+                        dto.setLastSenderId(lastMsg.getSender().getId());
+                        dto.setLastSenderName(lastMsg.getSender().getUserName());
+                    }
+                    dto.setLastMessageType(lastMsg.getMessageType() != null ? lastMsg.getMessageType().name() : null);
                 });
 
-        // Set unread count from Redis
         dto.setUnreadCount(chatRedisService.getUnreadCount(currentUserId, room.getId()));
-
-        if (dto.getLastSenderId() != null && dto.getLastSenderId().equals(currentUserId) && targetIdArr[0] != null) {
-            int opponentUnread = chatRedisService.getUnreadCount(targetIdArr[0], room.getId());
-            dto.setIsLastMessageSeen(opponentUnread == 0);
-        } else {
-            dto.setIsLastMessageSeen(false);
-        }
 
         return dto;
     }

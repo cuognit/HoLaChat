@@ -13,24 +13,42 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
         return null;
     }
 
-    const handleOpenFriendProfile = () => {
-        // Chỉ mở Dialog khi đây là phòng chat riêng (isGroup === false hoặc targetUserId tồn tại)
-        if (selectedUser.targetUserId) {
+    const isGroup = selectedUser.isGroup === true;
+
+    const handleOpenProfile = () => {
+        // Chỉ mở Dialog FriendProfile khi đây là phòng chat riêng (isGroup === false)
+        if (!isGroup && selectedUser.targetUserId) {
             friendProfileRef.current.open();
+        } else if (isGroup && !showInfo) {
+            // Nếu là nhóm, click vào avatar thì mở panel bên phải (Thông tin hội thoại)
+            toggleInfo();
         }
     };
+
+    const displayName = isGroup 
+        ? (selectedUser.roomName || "Nhóm chat") 
+        : (selectedUser.targetUserName || "User");
+
+    const displayAvatar = isGroup 
+        ? selectedUser.avatarUrl 
+        : (selectedUser.targetAvatarUrl || "/avatar.jpg");
+
+    const displayStatus = isGroup 
+        ? `${selectedUser.memberCount || 0} thành viên`
+        : (selectedUser.isOnline !== undefined ? (selectedUser.isOnline ? "Đang hoạt động" : "Không hoạt động") : "Chưa có trạng thái");
 
     return (
         <div className="bg-white h-18 p-4 border-b border-gray-200 flex items-center justify-between">
             
-            <div onClick={handleOpenFriendProfile} className="flex-1 max-w-[50%]">
+            <div onClick={handleOpenProfile} className="flex-1 max-w-[50%]">
                 <HeaderChatUser
-                    userName={selectedUser.targetUserName || "Chua co ten"}
-                    status={selectedUser.isOnline !== undefined ? (selectedUser.isOnline ? "Đang hoạt động" : "Không hoạt động") : "Chua co trang thai"}
-                    userAvatar={selectedUser.targetAvatarUrl || "/avatar.jpg"}
+                    userName={displayName}
+                    status={displayStatus}
+                    userAvatar={displayAvatar}
                     friendshipStatus={selectedUser.friendshipStatus}
                     friendshipSenderId={selectedUser.friendshipSenderId}
                     currentUserId={currentUser?.id}
+                    isGroup={isGroup}
                 />
             </div>
 
@@ -46,21 +64,23 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
             </div>
 
             {/* Dialog Thông tin tài khoản bạn bè */}
-            <DialogWindow 
-                dialogForm={
-            <FriendProfile 
-                    userId={selectedUser.targetUserId} 
-                    onClose={() => friendProfileRef.current.close()}
-                    externalFriendshipStatus={selectedUser.friendshipStatus}
-                    externalFriendshipSenderId={selectedUser.friendshipSenderId}
-                    onUnfriendSuccess={() => {
-                        // TODO: cập nhật sidebar nếu cần sau khi unfriend
-                    }}
+            {!isGroup && (
+                <DialogWindow 
+                    dialogForm={
+                        <FriendProfile 
+                            userId={selectedUser.targetUserId} 
+                            onClose={() => friendProfileRef.current.close()}
+                            externalFriendshipStatus={selectedUser.friendshipStatus}
+                            externalFriendshipSenderId={selectedUser.friendshipSenderId}
+                            onUnfriendSuccess={() => {
+                                // TODO: cập nhật sidebar nếu cần sau khi unfriend
+                            }}
+                        />
+                    } 
+                    ref={friendProfileRef} 
+                    position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[400px] max-w-[90vw] shadow-2xl`} 
                 />
-                } 
-                ref={friendProfileRef} 
-                position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[400px] max-w-[90vw] shadow-2xl`} 
-            />
+            )}
         </div>
     );
 }

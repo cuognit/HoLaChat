@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import ItemUser from "./ItemUser";
 import DialogWindow from "./dialog/DialogWindow";
 import ContactDialog from "./dialog/ContactDialog";
+import CreateGroupDialog from "./dialog/CreateGroupDialog";
 import { useChat } from "../../hooks/useChat";
 import { useChatSocket } from "../../hooks/useChatSocket";
 import api from '../../api/axiosConfig';
@@ -23,6 +24,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
     const profileRef = useRef();
     const logoutRef = useRef();
     const contactRef = useRef();
+    const createGroupRef = useRef();
     const [contactRefreshKey, setContactRefreshKey] = useState(0);
     const { selectedUser, setSelectedUser, currentUser, updateUserStatus } = useChat();
     const { subscribe, publish, isConnected } = useChatSocket();
@@ -254,6 +256,17 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                 ref={contactRef} 
                 position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[450px] max-w-[90vw] shadow-2xl`} 
             />
+
+            {/* Dialog Tạo nhóm */}
+            <DialogWindow 
+                dialogForm={
+                    <CreateGroupDialog 
+                        onClose={() => createGroupRef.current.close()} 
+                    />
+                } 
+                ref={createGroupRef} 
+                position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[480px] max-w-[90vw] shadow-2xl`} 
+            />
             {/* Bố cục cấu trúc chia đôi */}
             <div className="flex w-98 bg-white p-0 border-r border-gray-200 h-screen overflow-hidden select-none">
                 
@@ -299,7 +312,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                 {/* 2. KHU VỰC TÌM KIẾM & DANH SÁCH CHAT */}
                 <div className="flex-1 bg-white flex flex-col h-full overflow-hidden">
                     <div className="p-3 flex items-center gap-2">
-                        <div className="flex-1 flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-gray-300 px-2 py-1 rounded-md gap-1 transition-all">
+                        <div className="flex-1 flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-blue-500 px-2 py-1 rounded-md gap-1 transition-all">
                             <Search className="text-gray-400 w-4 h-4 ms-1" />
                             <input
                                 type="text"
@@ -314,7 +327,11 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                          className="cursor-pointer p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-700" title="Thêm bạn">
                             <UserPlus className="w-4.5 h-4.5" />
                         </button>
-                        <button className="cursor-pointer p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-700 relative" title="Tạo nhóm">
+                        <button
+                            onClick={() => createGroupRef.current.open()}
+                            className="cursor-pointer p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-700 relative"
+                            title="Tạo nhóm"
+                        >
                             <Users2 className="w-4.5 h-4.5" />
                             <span className="absolute top-[6px] left-[21px] text-gray-500 text-[13px] rounded-full font-bold leading-none">
                                 +

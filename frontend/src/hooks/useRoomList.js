@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from '../api/axiosConfig';
+import { toast } from "sonner";
 
 function escapeRegExp(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -48,8 +49,11 @@ export function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
         targetAvatarUrl: avatarUrl,
         lastMessage: rawRoom?.lastMessageContent ?? lastMessageObject?.content ?? (typeof lastMessageObject === "string" ? lastMessageObject : null) ?? rawRoom?.content ?? "Chưa có tin nhắn",
         lastMessageTime: rawRoom?.lastMessageTime ?? lastMessageObject?.createdAt ?? rawRoom?.createdAt ?? null,
-        lastMessageSenderId: rawRoom?.lastMessageSenderId ?? lastMessageObject?.senderId ?? null,
+        lastSenderId: rawRoom?.lastSenderId ?? lastMessageObject?.senderId ?? null,
+        lastSenderName: rawRoom?.lastSenderName ?? lastMessageObject?.senderName ?? null,
+        lastMessageType: rawRoom?.lastMessageType ?? lastMessageObject?.messageType ?? null,
         isLastMessageSeen: rawRoom?.isLastMessageSeen ?? false,
+        seenByUsers: Array.isArray(rawRoom?.seenByUsers) ? rawRoom.seenByUsers : [],
         unreadCount: rawRoom?.unreadCount ?? 0,
         isOnline: nestedUser?.isOnline ?? rawRoom?.isOnline ?? false,
         friendshipStatus: rawRoom?.friendshipStatus ?? null,
@@ -105,10 +109,10 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
                     ...user,
                     lastMessage: selectedUser.lastMessage ?? user.lastMessage,
                     lastMessageTime: selectedUser.lastMessageTime ?? user.lastMessageTime,
-                    lastMessageSenderId: selectedUser.lastMessageSenderId ?? user.lastMessageSenderId,
+                    lastSenderId: selectedUser.lastSenderId ?? user.lastSenderId,
                 } : user
         ));
-    }, [selectedUser?.lastMessage, selectedUser?.lastMessageTime, selectedUser?.lastMessageSenderId, selectedUser?.isLastMessageSeen, selectedUser?.id, selectedUser?.roomId]);
+    }, [selectedUser?.lastMessage, selectedUser?.lastMessageTime, selectedUser?.lastSenderId, selectedUser?.isLastMessageSeen, selectedUser?.id, selectedUser?.roomId]);
 
     // 4. Quản lý WebSocket phòng chat (Enter/Leave)
     useEffect(() => {
@@ -172,13 +176,37 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
         return () => subscription?.unsubscribe();
     }, [isConnected, subscribe, updateUserStatus]);
 
-    // 6. Tin nhắn mới / Unread count
+    // 6. Tin nhắn mới / Unread count / Group events từ server
     useEffect(() => {
         if (!currentUser?.id || !isConnected) return;
         const roomUpdateSub = subscribe(`/topic/user/${currentUser.id}/rooms`, (message) => {
             try {
                 const updatedRoom = typeof message === 'string' ? JSON.parse(message) : message;
                 
+                // Xử lý ROOM_DISSOLVED / ROOM_KICKED event
+                if (updatedRoom.type === "ROOM_DISSOLVED" || updatedRoom.type === "ROOM_KICKED") {
+                    const dissolvedRoomId = updatedRoom.data;
+                    setUsers(prev => prev.filter(u => 
+                        String(u.id) !== String(dissolvedRoomId) &&
+                        String(u.roomId) !== String(dissolvedRoomId)
+                    ));
+                    setSelectedUser(prev => {
+                        if (prev && (
+                            String(prev.id) === String(dissolvedRoomId) ||
+                            String(prev.roomId) === String(dissolvedRoomId)
+                        )) {
+                            navigate("/");
+                            toast.info(updatedRoom.type === "ROOM_DISSOLVED" 
+                                ? "Nhóm chat đã bị giải tán" 
+                                : "Bạn đã rời khỏi hoặc bị xóa khỏi nhóm chat này"
+                            );
+                            return null;
+                        }
+                        return prev;
+                    });
+                    return;
+                }
+
                 if (updatedRoom.friendshipStatus === "DELETED") {
                     setUsers(prevUsers => prevUsers.filter(u => String(u.id) !== String(updatedRoom.id)));
                     return;
@@ -196,7 +224,7 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
                     )) {
                         const finalRoomId = (typeof normalizedRoom.roomId === 'number' && normalizedRoom.roomId > 0)
                             ? normalizedRoom.roomId : (prevSelected.roomId || null);
-                        return { ...prevSelected, ...normalizedRoom, roomId: finalRoomId, messages: prevSelected.messages };
+                        return { ...prevSelected, ...normalizedRoom, roomId: finalRoomId, messages: prevSelected.messages, seenByUsers: prevSelected.seenByUsers ?? [] };
                     }
                     return prevSelected;
                 });
@@ -219,6 +247,52 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
         });
         return () => roomUpdateSub?.unsubscribe();
     }, [isConnected, subscribe, currentUser?.id]);
+
+    // 7. WebSocket member events của group room đang active
+    useEffect(() => {
+        if (!isConnected || !selectedUser?.isGroup || !selectedUser?.roomId) return;
+
+        const roomId = selectedUser.roomId;
+        const memberSub = subscribe(`/topic/room/${roomId}/members`, (message) => {
+            try {
+                const event = typeof message === 'string' ? JSON.parse(message) : message;
+                const { type, data } = event;
+
+                if (type === "MEMBER_LEFT") {
+                    const leftUserId = data;
+                    // Mình bị kick
+                    if (String(leftUserId) === String(currentUser.id)) {
+                        setUsers(prev => prev.filter(u =>
+                            String(u.id) !== String(roomId) &&
+                            String(u.roomId) !== String(roomId)
+                        ));
+                        setSelectedUser(null);
+                        navigate("/");
+                        toast.error("Bạn đã bị xóa khỏi nhóm");
+                    }
+                    // Cập nhật member count trong sidebar
+                    setUsers(prev => prev.map(u =>
+                        (String(u.id) === String(roomId) || String(u.roomId) === String(roomId))
+                            ? { ...u, memberCount: Math.max(0, (u.memberCount || 0) - 1) }
+                            : u
+                    ));
+                }
+
+                if (type === "MEMBER_JOINED") {
+                    setUsers(prev => prev.map(u =>
+                        (String(u.id) === String(roomId) || String(u.roomId) === String(roomId))
+                            ? { ...u, memberCount: (u.memberCount || 0) + 1 }
+                            : u
+                    ));
+                }
+                // ROLE_CHANGED được xử lý bên ConversationInfo qua cùng subscription
+            } catch (e) {
+                console.error("Error parsing member event:", e);
+            }
+        });
+
+        return () => memberSub?.unsubscribe();
+    }, [isConnected, subscribe, selectedUser?.roomId, selectedUser?.isGroup, currentUser?.id]);
 
     return { users, setUsers, urlRoomId, navigate };
 }

@@ -14,6 +14,8 @@ public class MessageDTO {
 
     private Long senderId;
     private String senderName;
+    private String senderAvatarUrl;
+    
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 }

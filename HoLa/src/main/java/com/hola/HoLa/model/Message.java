@@ -26,7 +26,7 @@ public class Message {
 
     // Quan hệ: Nhiều tin nhắn do 1 User gửi
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id", nullable = true)
     private User sender;
 
     @Column(columnDefinition = "TEXT")

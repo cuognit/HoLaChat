@@ -14,4 +14,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByRoomIdOrderByCreatedAtAsc(Long roomId);
     Optional<Message> findFirstByRoomIdOrderByCreatedAtDesc(Long roomId);
     Page<Message> findByRoomIdOrderByCreatedAtDesc(Long roomId, Pageable pageable);
+    void deleteAllByRoomId(Long roomId);
 }
+

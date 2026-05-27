@@ -5,6 +5,7 @@ import com.hola.HoLa.model.RoomMember;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -35,4 +36,19 @@ public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     List<RoomMember> findByRoomId(Long roomId);
 
     boolean existsByRoomIdAndUserId(Long roomId, Long userId);
+
+    List<RoomMember> findByRoomIdOrderByJoinedAtAsc(Long roomId);
+
+    Optional<RoomMember> findByRoomIdAndUserId(Long roomId, Long userId);
+
+    @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT rm FROM RoomMember rm WHERE rm.room.id = :roomId AND rm.user.id = :userId")
+    Optional<RoomMember> findByRoomIdAndUserIdForUpdate(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    int countByRoomId(Long roomId);
+
+    void deleteAllByRoomId(Long roomId);
+
+    @Query("SELECT CASE WHEN COUNT(rm) > 0 THEN true ELSE false END FROM RoomMember rm WHERE rm.room.id = :roomId AND rm.user.id = :userId AND rm.role = com.hola.HoLa.model.MemberRole.ADMIN")
+    boolean isAdminOfRoom(@Param("roomId") Long roomId, @Param("userId") Long userId);
 }

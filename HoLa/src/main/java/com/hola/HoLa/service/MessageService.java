@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,9 @@ public class MessageService {
     @Autowired
     private UserRepository userRepo;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @Transactional
     public MessageDTO savePrivateMessage(PrivateMessageRequest request) {
         if (request.getContent() == null || request.getContent().isBlank()) {
@@ -39,7 +43,7 @@ public class MessageService {
         }
 
         ChatRoom room = request.getRoomId() != null
-                ? chatRoomService.getValidatedPrivateRoom(request.getRoomId(), request.getSenderId(), request.getReceiverId())
+                ? chatRoomService.getValidatedRoom(request.getRoomId(), request.getSenderId())
                 : chatRoomService.getOrCreatePrivateRoom(request.getSenderId(), request.getReceiverId());
 
         User sender = userRepo.findById(request.getSenderId())
@@ -66,26 +70,48 @@ public class MessageService {
 
         // Fetch paginated messages ordered by created_at DESC
         Page<Message> messagePage = messageRepo.findByRoomIdOrderByCreatedAtDesc(roomId, PageRequest.of(page, size));
-        
+
         // Map to DTO
         List<MessageDTO> dtoList = messagePage.stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
-                
+
         // Reverse the list so it is ordered by ASC for the frontend
         Collections.reverse(dtoList);
-        
+
         return dtoList;
     }
 
-    private MessageDTO toDto(Message message) {
+    @Transactional
+    public MessageDTO saveSystemMessage(Long roomId, String content) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Chat room not found"));
+        Message message = new Message();
+        message.setRoom(room);
+        message.setSender(null); // System message không có sender
+        message.setContent(content);
+        message.setMessageType(MessageType.SYSTEM);
+        
+        MessageDTO dto = toDto(messageRepo.save(message));
+        
+        // Broadcast tin nhắn hệ thống realtime tới toàn bộ thành viên đang ở trong phòng chat qua WebSocket
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
+        
+        return dto;
+    }
+
+    public MessageDTO toDto(Message message) {
         MessageDTO dto = new MessageDTO();
         dto.setId(message.getId());
         dto.setRoomId(message.getRoom().getId());
         dto.setContent(message.getContent());
         dto.setMessageType(message.getMessageType().name());
-        dto.setSenderId(message.getSender().getId());
-        dto.setSenderName(message.getSender().getUserName());
+        // sender có thể null với SYSTEM messages
+        if (message.getSender() != null) {
+            dto.setSenderId(message.getSender().getId());
+            dto.setSenderName(message.getSender().getUserName());
+            dto.setSenderAvatarUrl(message.getSender().getAvatarUrl());
+        }
         dto.setCreatedAt(message.getCreatedAt());
         return dto;
     }

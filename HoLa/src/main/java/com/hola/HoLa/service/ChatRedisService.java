@@ -2,8 +2,10 @@ package com.hola.HoLa.service;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import org.redisson.api.RBucket;
 import org.redisson.api.RMap;
+import org.redisson.api.RSet;
 import org.redisson.api.RedissonClient;
 import org.redisson.codec.JsonJacksonCodec;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,5 +66,27 @@ public class ChatRedisService {
         if (userId == null) return null;
         RBucket<Long> activeRoomBucket = redissonClient.getBucket(String.format(ACTIVE_ROOM_PREFIX, userId), CODEC);
         return activeRoomBucket.get();
+    }
+
+    // SeenBy Logic using Redis Set
+    private static final String SEEN_BY_PREFIX = "room:%d:seenBy";
+
+    public void addSeenBy(Long roomId, Long userId) {
+        if (roomId == null || userId == null) return;
+        RSet<Long> seenSet = redissonClient.getSet(String.format(SEEN_BY_PREFIX, roomId), CODEC);
+        seenSet.add(userId);
+        seenSet.expire(Duration.ofHours(24));
+    }
+
+    public Set<Long> getSeenBy(Long roomId) {
+        if (roomId == null) return Set.of();
+        RSet<Long> seenSet = redissonClient.getSet(String.format(SEEN_BY_PREFIX, roomId), CODEC);
+        return seenSet.readAll();
+    }
+
+    public void clearSeenBy(Long roomId) {
+        if (roomId == null) return;
+        RSet<Long> seenSet = redissonClient.getSet(String.format(SEEN_BY_PREFIX, roomId), CODEC);
+        seenSet.delete();
     }
 }

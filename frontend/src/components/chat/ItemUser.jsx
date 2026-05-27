@@ -32,20 +32,73 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
 
     const lastMessageTime = user.lastMessageTime ? formatLastMessageTime(user.lastMessageTime) : "";
     
-    // Xác định ai gửi message cuối cùng
+    const isGroup = user.isGroup === true;
+
+    // Tên hiển thị
+    const displayName = isGroup
+        ? (user.roomName || "Nhóm chat")
+        : (user.targetUserName || targetUserName || "User");
+
+    // Avatar
+    const renderAvatar = () => {
+        if (isGroup) {
+            if (user.avatarUrl) {
+                return (
+                    <img
+                        src={user.avatarUrl}
+                        alt={displayName}
+                        className="w-12 h-12 rounded-full object-cover border border-gray-300"
+                    />
+                );
+            }
+            // Fallback icon nhóm
+            return (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center border border-blue-300">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+            );
+        }
+        return (
+            <img
+                src={user.targetAvatarUrl || "/avatar.jpg"}
+                alt={displayName}
+                className="w-12 h-12 rounded-full object-cover border border-gray-300"
+            />
+        );
+    };
+
+    // Last message preview
     const getLastMessagePreview = () => {
         const content = user.lastMessage || "Hãy gửi lời chào ngay!";
-        
-       
-        if (!user.lastSenderId || !currentUserId) {
+        const msgType = user.lastMessageType;
+
+        // System message: in nghiêng, không prefix
+        if (msgType === "SYSTEM") {
             return content;
         }
-        const senderName = user.lastSenderId === currentUserId ? currentUserName : targetUserName;
-        if (senderName === currentUserName) {
-            return `Bạn: ${content}`;
+
+        if (!user.lastSenderId || !currentUserId) return content;
+
+        if (isGroup) {
+            // Group: "Bạn: ..." hoặc "Tên người gửi: ..."
+            if (String(user.lastSenderId) === String(currentUserId)) {
+                return `Bạn: ${content}`;
+            }
+            const senderName = user.lastSenderName || "Ai đó";
+            return `${senderName}: ${content}`;
         }
+
+        // Private
+        const senderName = String(user.lastSenderId) === String(currentUserId) ? currentUserName : targetUserName;
         return `${senderName}: ${content}`;
     };
+
+    const isSystemMsg = user.lastMessageType === "SYSTEM";
     
     return (
         <div
@@ -59,27 +112,26 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
             } w-full flex items-center gap-2 p-2.5 rounded-xl cursor-pointer transition-colors mb-1 hover:bg-gray-50`}
         >
             <div className="relative">
-                <img
-                    src={user.targetAvatarUrl || "/avatar.jpg"}
-                    alt={user.targetUserName || "User"}
-                    className="w-12 h-12 rounded-full object-cover border border-gray-300"
-                />
-                {/* Trạng thái online/offline */}
-                <div
-                    className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                        isOnline ? 'bg-green-500' : 'bg-gray-400'
-                    }`}
-                />
+                {renderAvatar()}
+                {/* Online dot: chỉ hiện cho private room */}
+                {!isGroup && (
+                    <div
+                        className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                            isOnline ? 'bg-green-500' : 'bg-gray-400'
+                        }`}
+                    />
+                )}
             </div>
+
             <div className="flex-1 flex flex-col min-w-0 justify-center">
                 <div className="flex justify-between items-center">
                     <h3 className={`text-[15px] ${
                         user.unreadCount > 0 && !isActive ? "font-bold text-blue-600" : "font-semibold text-gray-800"
                     }`}>
-                        {user.targetUserName || "Chưa có tên"}
+                        {displayName}
                     </h3>
                     
-                    {/* Badge số tin nhắn chưa đọc đỏ nổi bật */}
+                    {/* Badge số tin nhắn chưa đọc */}
                     {user.unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm animate-pulse">
                             {user.unreadCount > 99 ? '99+' : user.unreadCount}
@@ -87,9 +139,9 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
                     )}
                 </div>
 
-                {/* Nội dung tin nhắn cuối cùng và thời gian */}
                 <div className="flex items-center justify-between h-4 mt-0.5">
                     <p className={`truncate text-sm max-w-[220px] ${
+                        isSystemMsg ? "italic text-gray-400" :
                         user.unreadCount > 0 && !isActive ? "font-normal text-gray-700" : "text-gray-400"
                     }`}>
                         {getLastMessagePreview()}
@@ -102,6 +154,13 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
                         </p>
                     </div>
                 </div>
+
+                {/* Số thành viên cho group */}
+                {isGroup && user.memberCount > 0 && (
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                        {user.memberCount} thành viên
+                    </p>
+                )}
             </div>
         </div>
     );
