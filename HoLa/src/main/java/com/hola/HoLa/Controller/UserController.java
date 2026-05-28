@@ -59,10 +59,10 @@ public class UserController {
         // lưu rc vào cookie
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
             .httpOnly(true)
-            .secure(false)
+            .secure(true)       // Bắt buộc với HTTPS
             .path("/")
             .maxAge(7 * 24 * 60 * 60)
-            .sameSite("Lax").build();
+            .sameSite("None").build(); // None vì frontend (h-ola.app) và API (api.h-ola.app) là cross-site
         ResponseApi<Object> response = new ResponseApi<>(200, "Đăng nhập thành công!", accessToken );   
         return ResponseEntity.ok()
         .header("Set-Cookie", cookie.toString())
@@ -103,10 +103,10 @@ public class UserController {
         refreshTokenRepository.deleteByRefreshToken(refreshToken);
         ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
             .httpOnly(true)
-            .secure(false)
+            .secure(true)
             .path("/")
             .maxAge(0)
-            .sameSite("Lax").build();
+            .sameSite("None").build();
         ResponseApi<String> response = new ResponseApi<>(200, "Logout successfully!", null );   
         return ResponseEntity.ok()
         .header("Set-Cookie", cookie.toString())
