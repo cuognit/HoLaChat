@@ -39,6 +39,9 @@ public class UserController {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private JwtUtils jwtUtils;
+
 //    [POST] /register
     @PostMapping("/register")
     public ResponseEntity<ResponseApi<String>> register(@RequestBody RequestRegister user){
@@ -90,7 +93,7 @@ public class UserController {
             throw new RuntimeException("Refresh token has been revoked!");
         }
         
-        String newAccessToken = JwtUtils.generateAccessToken(token.getUser().getEmail());
+        String newAccessToken = jwtUtils.generateAccessToken(token.getUser().getEmail());
         ResponseApi<String> response = new ResponseApi<>(200, "Refresh token successfully!", newAccessToken );   
         return ResponseEntity.ok().body(response);
     }

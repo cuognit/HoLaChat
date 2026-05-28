@@ -131,8 +131,8 @@ public class UserService {
         } else if (!passwordEncoder.matches(dto.getPassWord(), userExist.getPassWord())) {
             throw new RuntimeException("Mật khẩu không đúng!");
         } else {
-            String accessToken = JwtUtils.generateAccessToken(dto.getEmail());
-            String refreshToken = JwtUtils.generateRefreshToken(dto.getEmail());
+            String accessToken = jwtUtils.generateAccessToken(dto.getEmail());
+            String refreshToken = jwtUtils.generateRefreshToken(dto.getEmail());
            
             
             //lưu refresh token vào database
