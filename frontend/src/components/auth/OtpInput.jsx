@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldCheck,Loader2 } from 'lucide-react';
 import { useImperativeHandle } from 'react';
-
 import { forwardRef } from 'react';
-import axios from 'axios';
+import api from '../../api/axiosConfig';
 import {toast} from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -122,31 +121,26 @@ const  OutInput = forwardRef( (props, ref) => {
     const [loading,setLoading] = useState(false);
   const handleOtpComplete = (otpCode) => {
     setLoading(true);
-       setTimeout(() => {
-      
-      axios.post("http://localhost:8080/api/auth/verify-otp", {
-       otp: otpCode,
-       email: props.email
+    setTimeout(() => {
+      api.post("/auth/verify-otp", {
+        otp: otpCode,
+        email: props.email
       })
-  
-    .then(res => {
-      console.log(res.data);
-      toast.success(res.data.message);
-      setLoading(false);
-      setGreen(true);
-      setTimeout(()=>{
-      dialogRef.current.close();
-      navi("/login");
-      },2000)
-    })
-    .catch (error => {
-      console.error(error.response.data);
-      toast.warning(error.response.data.message);
-      setRed(true);
-      setLoading(false);
-    });
-      }, 2000);
-          
+      .then(res => {
+        toast.success(res.data.message);
+        setLoading(false);
+        setGreen(true);
+        setTimeout(() => {
+          dialogRef.current.close();
+          navi("/login");
+        }, 2000);
+      })
+      .catch(error => {
+        toast.warning(error.response?.data?.message);
+        setRed(true);
+        setLoading(false);
+      });
+    }, 2000);
   };
 
   return (

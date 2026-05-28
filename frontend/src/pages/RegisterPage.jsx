@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect} from 'react';
 import { Mail, Lock,User } from 'lucide-react';
 import OutInput from '../components/auth/OtpInput';
-import axios from 'axios';
+import api from '../api/axiosConfig';
 import {toast} from 'sonner';
 
 export default function RegisterPage() {
@@ -43,50 +43,37 @@ export default function RegisterPage() {
 
         const handleSubmit = (e) => {
             e.preventDefault();
-            
 
-                axios.post("http://localhost:8080/api/auth/register",{
+            api.post("/auth/register", {
                 email: email,
                 passWord: passWord,
                 userName: userName
             })
             .then(res => {
-                console.log(res.data);
-                 OtpInputRef.current.open();
-                    axios.post("http://localhost:8080/api/auth/otp",{
-                        email: email
-                    })
+                OtpInputRef.current.open();
+                api.post("/auth/otp", { email: email })
                     .then(res => {
-                        console.log(res.data);
                         toast.success(res.data.message);
                     })
-                    .catch (error => {
-                        console.error(error.response.data);
-                        toast.warning(error.response.data.message);
+                    .catch(error => {
+                        toast.warning(error.response?.data?.message);
                     });
-                    })
-                .catch (error => {
-                        console.error(error.response.data);
-                        toast.warning(error.response.data.message);
-                        
-                    });
-            
+            })
+            .catch(error => {
+                toast.warning(error.response?.data?.message);
+            });
         };
+
         const sendOtp = () => {
-                axios.post("http://localhost:8080/api/auth/otp",{
-                        email: email
-                    })
-                    .then(res => {
-                        console.log(res.data);
-                        toast.success(res.data.message);
-                    })
-                    .catch (error => {
-                        console.error(error.response.data);
-                        toast.warning(error.response.data.message);
-                    });
-                setTime(120);
-                
-         };
+            api.post("/auth/otp", { email: email })
+                .then(res => {
+                    toast.success(res.data.message);
+                })
+                .catch(error => {
+                    toast.warning(error.response?.data?.message);
+                });
+            setTime(120);
+        };
         const enableSubmit = email && passWord && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 
