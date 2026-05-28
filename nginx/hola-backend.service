@@ -1,0 +1,21 @@
+[Unit]
+Description=HoLaChat Spring Boot Application
+After=network.target
+
+[Service]
+User=root
+# Đường dẫn tới thư mục chứa file jar
+WorkingDirectory=/var/www/hola/HoLa
+
+# Khai báo môi trường để load đúng .env
+Environment="SPRING_PROFILES_ACTIVE=production"
+
+# Lệnh chạy ứng dụng. Cần trỏ đúng đường dẫn tới file jar đã build
+ExecStart=/usr/bin/java -jar /var/www/hola/HoLa/target/HoLa-0.0.1-SNAPSHOT.jar
+
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
