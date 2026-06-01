@@ -159,7 +159,7 @@ export default function Message({
                 <div className={`flex items-center gap-2 group/msg relative ${isSentByMe ? 'flex-row-reverse' : 'flex-row'}`}>
                     
                     {/* Bong bóng tin nhắn */}
-                    <div className={`relative px-4 py-2.5 rounded-2xl shadow-sm border max-w-lg transition-all duration-150 ${
+                    <div className={`relative px-4 py-1 rounded-2xl shadow-sm border max-w-lg transition-all duration-150 ${
                         isSentByMe 
                             ? 'bg-blue-50 text-blue-950 border-blue-200/50 hover:bg-blue-100/60' 
                             : 'bg-white text-gray-800 border-gray-100 hover:bg-gray-50/70'
@@ -170,15 +170,15 @@ export default function Message({
                         <p className="wrap-break-word whitespace-pre-wrap leading-relaxed text-[14.5px]">{content}</p>
                         
                         {shouldShowTime() && (
-                            <p className="text-[10px] text-gray-400 mt-1 select-none text-right">
+                            <p className={`text-[10px] text-gray-400 mt-2 select-none ${isSentByMe ? 'text-left' : 'text-right'}`}>
                                 {time}
                             </p>
                         )}
 
                         {/* Nút Like rỗng & Popover Cảm xúc nổi: Chỉ hiển thị ở tin nhắn cuối của chuỗi liên tiếp */}
                         {isLastInConsecutiveGroup() && (
-                            <div className={`absolute -bottom-3 ${isSentByMe ? 'left-0' : 'right-0'} z-20 group/like`}>
-                                <button className="flex items-center justify-center w-6 h-6 bg-white hover:bg-gray-50 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer active:scale-90">
+                            <div className={`absolute -bottom-3 ${isSentByMe ? '-left-1' : '-right-1'} z-20 group/like`}>
+                                <button className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-50 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer active:scale-90">
                                     <ThumbsUp className="w-3 h-3 stroke-[2.5]" />
                                 </button>
                                 

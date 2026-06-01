@@ -1,5 +1,5 @@
 import { Dot } from "lucide-react";
-
+import image6 from "../../assets/image6.png";
 export default function HeaderChatUser({ 
     userName, 
     status, 
@@ -26,7 +26,7 @@ export default function HeaderChatUser({
         }
         return (
             <img
-                src={userAvatar || "/avatar.jpg"}
+                src={`${isGroup ? image6 : userAvatar}`}
                 alt={userName}
                 className="w-13 h-13 rounded-full object-cover border border-gray-300 mb-1"
             />

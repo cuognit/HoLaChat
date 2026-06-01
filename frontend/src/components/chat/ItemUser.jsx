@@ -1,8 +1,8 @@
 import { useState } from "react";
 import api from "../../api/axiosConfig";
 import { toast } from "sonner";
-
-export default function ItemUser({ user, onSelect, isActive = false, currentUserId, currentUserName = "Bạn", targetUserName = "User" }) {
+import image6 from "../../assets/image6.png";
+export default function ItemUser({ user, onSelect, isActive = false, currentUserId, currentUserName = "Bạn", targetUserName = "User", typingUsers = [] }) {
     const isOnline = user.isOnline ?? false;
     const [actionLoading, setActionLoading] = useState(false);
 
@@ -45,7 +45,7 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
             if (user.avatarUrl) {
                 return (
                     <img
-                        src={user.avatarUrl}
+                        src={image6}
                         alt={displayName}
                         className="w-12 h-12 rounded-full object-cover border border-gray-300"
                     />
@@ -140,12 +140,29 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
                 </div>
 
                 <div className="flex items-center justify-between h-4 mt-0.5">
-                    <p className={`truncate text-sm max-w-[220px] ${
-                        isSystemMsg ? "italic text-gray-400" :
-                        user.unreadCount > 0 && !isActive ? "font-normal text-gray-700" : "text-gray-400"
-                    }`}>
-                        {getLastMessagePreview()}
-                    </p>
+                    {typingUsers.length > 0 ? (
+                        <p className="truncate text-sm max-w-[220px] text-blue-500 font-medium flex items-center gap-1">
+                            <span className="flex items-center gap-0.5">
+                                <span className="typing-dot-sm w-[4px] h-[4px] bg-blue-500 rounded-full inline-block" style={{ animationDelay: "0ms" }}></span>
+                                <span className="typing-dot-sm w-[4px] h-[4px] bg-blue-500 rounded-full inline-block" style={{ animationDelay: "150ms" }}></span>
+                                <span className="typing-dot-sm w-[4px] h-[4px] bg-blue-500 rounded-full inline-block" style={{ animationDelay: "300ms" }}></span>
+                            </span>
+                            <span className="ml-0.5">
+                                {user.isGroup && typingUsers.length === 1
+                                    ? `${typingUsers[0].userName} đang nhập`
+                                    : user.isGroup
+                                    ? `${typingUsers.length} người đang nhập`
+                                    : "Đang nhập"}
+                            </span>
+                        </p>
+                    ) : (
+                        <p className={`truncate text-sm max-w-[220px] ${
+                            isSystemMsg ? "italic text-gray-400" :
+                            user.unreadCount > 0 && !isActive ? "font-normal text-gray-700" : "text-gray-400"
+                        }`}>
+                            {getLastMessagePreview()}
+                        </p>
+                    )}
                     <div className="flex flex-col items-end mt-3">
                         <p className={`text-[10px] ${
                             user.unreadCount > 0 && !isActive ? "font-bold text-blue-600" : "text-gray-400"
@@ -155,12 +172,12 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
                     </div>
                 </div>
 
-                {/* Số thành viên cho group */}
+                {/* Số thành viên cho group
                 {isGroup && user.memberCount > 0 && (
                     <p className="text-[10px] text-gray-400 mt-0.5">
                         {user.memberCount} thành viên
                     </p>
-                )}
+                )} */}
             </div>
         </div>
     );

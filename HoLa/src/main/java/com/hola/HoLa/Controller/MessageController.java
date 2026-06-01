@@ -4,6 +4,7 @@ import com.hola.HoLa.dto.MessageDTO;
 import com.hola.HoLa.dto.PrivateMessageRequest;
 import com.hola.HoLa.dto.ChatRoomDTO;
 import com.hola.HoLa.dto.RoomActionRequest;
+import com.hola.HoLa.dto.TypingRequest;
 import com.hola.HoLa.dto.SeenUserDTO;
 import com.hola.HoLa.service.ChatRoomService;
 import com.hola.HoLa.service.MessageService;
@@ -102,6 +103,16 @@ public class MessageController {
         if (request.getUserId() != null) {
             chatRedisService.removeActiveRoom(request.getUserId());
         }
+    }
+
+    @MessageMapping("/typing")
+    public void typing(TypingRequest request) {
+        if (request.getRoomId() == null || request.getUserId() == null) return;
+
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + request.getRoomId() + "/typing",
+                request
+        );
     }
 
     /**

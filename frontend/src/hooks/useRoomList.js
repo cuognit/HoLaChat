@@ -62,7 +62,7 @@ export function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
     };
 }
 
-export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUserStatus, isConnected, subscribe, publish) {
+export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUserStatus, updateTypingUser, isConnected, subscribe, publish) {
     const [users, setUsers] = useState([]);
     const prevSelectedRoomIdRef = useRef(null);
     const { roomId: urlRoomId } = useParams();
@@ -175,6 +175,41 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
         });
         return () => subscription?.unsubscribe();
     }, [isConnected, subscribe, updateUserStatus]);
+
+    // 5b. Subscribe typing events cho tất cả phòng
+    useEffect(() => {
+        if (!isConnected || users.length === 0) return;
+
+        const typingSubs = [];
+        const subscribedRooms = new Set();
+
+        users.forEach(user => {
+            const roomId = user.roomId;
+            if (!roomId || subscribedRooms.has(roomId)) return;
+            subscribedRooms.add(roomId);
+
+            const sub = subscribe(`/topic/room/${roomId}/typing`, (data) => {
+                if (!data?.userId || !data?.roomId) return;
+                // Bỏ qua typing event của chính mình
+                if (String(data.userId) === String(currentUser?.id)) return;
+
+                if (data.typing) {
+                    updateTypingUser(data.roomId, data.userId, data.userName, data.avatarUrl, true);
+                    // Auto-clear sau 4s (phòng trường hợp không nhận được stop event)
+                    setTimeout(() => {
+                        updateTypingUser(data.roomId, data.userId, data.userName, data.avatarUrl, false);
+                    }, 4000);
+                } else {
+                    updateTypingUser(data.roomId, data.userId, data.userName, data.avatarUrl, false);
+                }
+            });
+            if (sub) typingSubs.push(sub);
+        });
+
+        return () => {
+            typingSubs.forEach(sub => sub?.unsubscribe());
+        };
+    }, [isConnected, subscribe, users.length, currentUser?.id, updateTypingUser]);
 
     // 6. Tin nhắn mới / Unread count / Group events từ server
     useEffect(() => {

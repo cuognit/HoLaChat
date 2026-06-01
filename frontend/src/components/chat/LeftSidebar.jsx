@@ -26,11 +26,11 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
     const contactRef = useRef();
     const createGroupRef = useRef();
     const [contactRefreshKey, setContactRefreshKey] = useState(0);
-    const { selectedUser, setSelectedUser, currentUser, updateUserStatus } = useChat();
+    const { selectedUser, setSelectedUser, currentUser, updateUserStatus, updateTypingUser, typingUsersMap } = useChat();
     const { subscribe, publish, isConnected } = useChatSocket();
 
     const { users, setUsers, urlRoomId, navigate } = useRoomList(
-        currentUser, selectedUser, setSelectedUser, updateUserStatus, isConnected, subscribe, publish
+        currentUser, selectedUser, setSelectedUser, updateUserStatus, updateTypingUser, isConnected, subscribe, publish
     );
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -385,6 +385,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                                 currentUser={currentUser} 
                                 selectedUser={selectedUser} 
                                 onSelectUser={handleSelectUser} 
+                                typingUsersMap={typingUsersMap}
                             />
                         ) : (
                             <FriendRequestList 
@@ -426,7 +427,7 @@ function SearchResultsList({ isSearching, searchResults, onSelectSearchResult })
     );
 }
 
-function PriorityRoomList({ priorityUsers, currentUser, selectedUser, onSelectUser }) {
+function PriorityRoomList({ priorityUsers, currentUser, selectedUser, onSelectUser, typingUsersMap }) {
     if (priorityUsers.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 h-full gap-2 bg-gray-50/50 mt-10 rounded-2xl mx-2">
@@ -447,6 +448,9 @@ function PriorityRoomList({ priorityUsers, currentUser, selectedUser, onSelectUs
                 (selectedUser?.roomId && user.roomId && selectedUser.roomId === user.roomId) ||
                 (selectedUser?.id && user.id && selectedUser.id === user.id)
             }
+            typingUsers={(typingUsersMap[user.roomId] ?? []).filter(
+                u => String(u.userId) !== String(currentUser?.id)
+            )}
         />
     ));
 }

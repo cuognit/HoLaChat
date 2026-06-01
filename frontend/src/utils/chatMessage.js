@@ -1,12 +1,14 @@
+export function parseApiDate(createdAt) {
+    if (!createdAt) return null;
+    let dateStr = createdAt.replace(" ", "T");
+   
+    return new Date(dateStr);
+}
+
 export function formatMessageTime(createdAt) {
-    if (!createdAt) {
-        return "";
-    }
-
-    const parsedDate = new Date(createdAt.replace(" ", "T"));
-
-    if (Number.isNaN(parsedDate.getTime())) {
-        return createdAt;
+    const parsedDate = parseApiDate(createdAt);
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+        return createdAt || "";
     }
 
     return parsedDate.toLocaleTimeString([], {

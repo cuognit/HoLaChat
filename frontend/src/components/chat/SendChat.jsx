@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { SendHorizonal, Smile, ThumbsUp } from 'lucide-react';
 import { useChat } from "../../hooks/useChat";
@@ -20,6 +20,8 @@ export default function SendChat() {
     const subscribedRoomIdRef = useRef(null);
     const selectedUserRef = useRef(selectedUser);
     const currentUserIdRef = useRef(currentUserId);
+    const typingTimeoutRef = useRef(null);
+    const isTypingRef = useRef(false);
 
     const canSendMessage = useMemo(() => {
         return Boolean(selectedUser && currentUserId && inputMessage.trim());
@@ -29,6 +31,37 @@ export default function SendChat() {
         selectedUserRef.current = selectedUser;
         currentUserIdRef.current = currentUserId;
     }, [selectedUser, currentUserId]);
+
+    const emitTyping = useCallback(() => {
+        if (!isConnected || !activeRoomId || !currentUserId) return;
+
+        // Chỉ gửi event typing nếu chưa gửi hoặc đã hết debounce
+        if (!isTypingRef.current) {
+            isTypingRef.current = true;
+            publish("/app/typing", {
+                roomId: activeRoomId,
+                userId: currentUserId,
+                userName: currentUser?.userName,
+                avatarUrl: currentUser?.avatarUrl,
+                typing: true,
+            });
+        }
+
+        // Reset timeout: sau 3s không gõ → gửi stop typing
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        typingTimeoutRef.current = setTimeout(() => {
+            isTypingRef.current = false;
+            publish("/app/typing", {
+                roomId: activeRoomId,
+                userId: currentUserId,
+                userName: currentUser?.userName,
+                avatarUrl: currentUser?.avatarUrl,
+                typing: false,
+            });
+        }, 3000);
+    }, [isConnected, activeRoomId, currentUserId, currentUser?.userName, currentUser?.avatarUrl, publish]);
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -220,6 +253,19 @@ export default function SendChat() {
 
     function handleSubmit(event, isThumbsUp = false) {
         if (event) event.preventDefault();
+
+        // Stop typing khi gửi tin nhắn
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        if (isTypingRef.current && isConnected && activeRoomId) {
+            isTypingRef.current = false;
+            publish("/app/typing", {
+                roomId: activeRoomId,
+                userId: currentUserId,
+                userName: currentUser?.userName,
+                avatarUrl: currentUser?.avatarUrl,
+                typing: false,
+            });
+        }
         
         let messageToSend = inputMessage.trim();
         if (isThumbsUp) {
@@ -272,7 +318,12 @@ export default function SendChat() {
             <form className="flex gap-2 items-end w-full relative" onSubmit={handleSubmit}>
                 <TextareaAutosize
                     value={inputMessage}
-                    onChange={(event) => setInputMessage(event.target.value)}
+                    onChange={(event) => {
+                        setInputMessage(event.target.value);
+                        if (event.target.value.trim()) {
+                            emitTyping();
+                        }
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder={selectedUser ? "Nhap tin nhan..." : "Hay chon mot cuoc tro chuyen"}
                     className="flex-1 py-3 outline-none resize-none w-full disabled:bg-white disabled:text-gray-400"

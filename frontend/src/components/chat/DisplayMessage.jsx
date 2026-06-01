@@ -2,9 +2,10 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Message from "./Message";
 import { useChat } from "../../hooks/useChat";
 import { getMessagesByRoom } from "../../services/messageService";
-import { normalizeIncomingMessage } from "../../utils/chatMessage";
+import { normalizeIncomingMessage, parseApiDate } from "../../utils/chatMessage";
 import { ArrowDown, Loader2, Loader } from "lucide-react";
 import { DashRing, BouncingDots, Ripple} from "../LoadingUI";
+import TypingIndicator from "./TypingIndicator";
 export default function DisplayMessage() {
     const { selectedUser, setSelectedUser, currentUser } = useChat();
     const containerRef = useRef(null);
@@ -169,7 +170,7 @@ export default function DisplayMessage() {
     const formatDateDivider = (dateString) => {
         if (!dateString) return "";
         try {
-            const date = new Date(dateString.replace(" ", "T"));
+            const date = parseApiDate(dateString);
             const today = new Date();
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
@@ -202,6 +203,8 @@ export default function DisplayMessage() {
     return (
         <div className="relative flex-1 flex flex-col overflow-hidden">
             <div ref={containerRef} className="bg-gray-100 flex-1 px-4 overflow-y-auto flex flex-col-reverse relative">
+                {/* Typing indicator */}
+                <TypingIndicator />
                 {/* Cảm biến vị trí dưới cùng kiêm khoảng đệm 24px */}
                 <div ref={bottomObserverTarget} className="h-6 w-full shrink-0"></div>
 
@@ -238,8 +241,8 @@ export default function DisplayMessage() {
                         const showSeenAvatar = seenByUsers.length > 0;
                         const showSentStatus = isLastMessage && isSentByMe && !showSeenAvatar;
                         
-                        const currentDateString = message?.createdAt ? new Date(message.createdAt.replace(" ", "T")).toDateString() : null;
-                        const previousDateString = previousMessageCreatedAt ? new Date(previousMessageCreatedAt.replace(" ", "T")).toDateString() : null;
+                        const currentDateString = message?.createdAt ? parseApiDate(message.createdAt)?.toDateString() : null;
+                        const previousDateString = previousMessageCreatedAt ? parseApiDate(previousMessageCreatedAt)?.toDateString() : null;
                         const showDateDivider = currentDateString && currentDateString !== previousDateString;
 
                         return (
