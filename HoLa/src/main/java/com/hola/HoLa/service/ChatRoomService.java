@@ -47,6 +47,9 @@ public class ChatRoomService {
     @org.springframework.context.annotation.Lazy
     private MessageService messageService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.frontend-url}")
+    private String frontendUrl;
+
     @Transactional
     public ChatRoom getOrCreatePrivateRoom(Long user1Id, Long user2Id) {
         validatePrivateChatUsers(user1Id, user2Id);
@@ -189,7 +192,7 @@ public class ChatRoomService {
 
     @Transactional
     public ChatRoom updateGroupAvatar(Long roomId, Long requesterId, String avatarUrl) {
-        assertIsAdminOfRoom(roomId, requesterId);
+        assertIsMember(roomId, requesterId);
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Phòng không tồn tại"));
         room.setAvatarUrl(avatarUrl);
@@ -311,5 +314,70 @@ public class ChatRoomService {
         dto.setUnreadCount(chatRedisService.getUnreadCount(currentUserId, room.getId()));
 
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public String getInviteLink(Long roomId, Long requesterId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Phòng chat không tồn tại"));
+        
+        if (!Boolean.TRUE.equals(room.getIsGroup())) {
+            throw new RuntimeException("Chỉ nhóm chat mới có link mời");
+        }
+        
+        if (!roomMemberRepository.existsByRoomIdAndUserId(roomId, requesterId)) {
+            throw new RuntimeException("Bạn không thuộc nhóm này để lấy link mời");
+        }
+        
+        String encodedRoomId = java.util.Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(String.valueOf(roomId).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                
+        return frontendUrl + "/join/" + encodedRoomId;
+    }
+
+    @Transactional(readOnly = true)
+    public ChatRoomDTO getJoinInfo(String encodedRoomId, Long currentUserId) {
+        try {
+            byte[] decodedBytes = java.util.Base64.getUrlDecoder().decode(encodedRoomId);
+            Long roomId = Long.parseLong(new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8));
+            
+            ChatRoom room = chatRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new RuntimeException("Phòng chat không tồn tại hoặc link mời không hợp lệ"));
+            
+            if (!Boolean.TRUE.equals(room.getIsGroup())) {
+                throw new RuntimeException("Link mời này không hợp lệ");
+            }
+            
+            return toDto(room, currentUserId);
+        } catch (Exception e) {
+            throw new RuntimeException("Link mời không hợp lệ hoặc đã hết hạn");
+        }
+    }
+
+    @Transactional
+    public ChatRoom joinGroupRoom(Long userId, Long roomId) {
+        ChatRoom room = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Nhóm chat không tồn tại"));
+                
+        if (!Boolean.TRUE.equals(room.getIsGroup())) {
+            throw new RuntimeException("Không thể tham gia cuộc trò chuyện riêng tư bằng link");
+        }
+        
+        if (roomMemberRepository.existsByRoomIdAndUserId(roomId, userId)) {
+            throw new RuntimeException("Bạn đã là thành viên của nhóm này rồi");
+        }
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+                
+        RoomMember rm = new RoomMember();
+        rm.setRoom(room);
+        rm.setUser(user);
+        rm.setRole(MemberRole.MEMBER);
+        roomMemberRepository.save(rm);
+        
+        messageService.saveSystemMessage(roomId, user.getUserName() + " đã tham gia nhóm bằng link mời");
+        
+        return room;
     }
 }

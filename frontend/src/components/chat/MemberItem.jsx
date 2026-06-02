@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { MoreHorizontal, Crown, UserMinus, ShieldCheck, ShieldOff, Info } from "lucide-react";
+import { useChat } from "../../hooks/useChat";
 
 export default function MemberItem({ member, myRole, currentUserId, roomId, onRoleChange, onKick }) {
+    const { userStatusMap } = useChat();
     const isAdmin = member.role === "ADMIN";
     const isSelf = member.userId === currentUserId;
     const canManage = myRole === "ADMIN" && !isSelf;
@@ -20,8 +22,13 @@ export default function MemberItem({ member, myRole, currentUserId, roomId, onRo
         return () => document.removeEventListener("mousedown", handle);
     }, []);
 
+    // Lấy trạng thái online thời gian thực từ context, fallback về thông tin tĩnh từ database
+    const isOnline = userStatusMap[String(member.userId)] ?? member.isOnline ?? false;
+
     return (
-        <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-xl transition-colors group relative">
+        <div className={`flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-xl transition-colors group relative ${
+            menuOpen ? "z-40 shadow-xs" : "z-0"
+        }`}>
             {/* Avatar */}
             <div className="relative shrink-0">
                 <img
@@ -30,8 +37,8 @@ export default function MemberItem({ member, myRole, currentUserId, roomId, onRo
                     className="w-10 h-10 rounded-full object-cover border border-gray-200"
                 />
                 <span
-                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white
-                        ${member.isOnline ? "bg-green-500" : "bg-gray-300"}`}
+                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white transition-colors duration-300
+                        ${isOnline ? "bg-green-500" : "bg-gray-300"}`}
                 />
             </div>
 

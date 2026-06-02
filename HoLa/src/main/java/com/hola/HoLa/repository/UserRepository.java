@@ -15,6 +15,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     List<User> findByEmailContainingIgnoreCaseAndEmailNot(String keyword, String email);
 
+    @Query("SELECT u FROM User u WHERE (LOWER(u.userName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND u.email != :excludeEmail")
+    List<User> searchByNameOrEmail(@org.springframework.data.repository.query.Param("keyword") String keyword, 
+                                   @org.springframework.data.repository.query.Param("excludeEmail") String excludeEmail);
+
     @Modifying
     @Transactional
     @Query("UPDATE User u SET u.isOnline = :isOnline")

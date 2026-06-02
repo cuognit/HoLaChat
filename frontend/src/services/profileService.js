@@ -1,5 +1,6 @@
 import api from "../api/axiosConfig";
 import axios from "axios"; 
+import { compressImage } from "../utils/imageCompressor";
 
 
 const CLOUDINARY_UPLOAD_URL = import.meta.env.VITE_CLOUDINARY_UPLOAD_URL;
@@ -11,9 +12,12 @@ export async function updateProfileText(data) {
 }
 
 export async function uploadAvatar(file) {
+    // Nén ảnh trước khi upload
+    const compressedFile = await compressImage(file, { maxWidth: 800, maxHeight: 800, quality: 0.7 });
+
     // 1. Upload ảnh trực tiếp từ client lên Cloudinary CDN
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", compressedFile);
     formData.append("upload_preset", UPLOAD_PRESET);
     formData.append("folder", "hola_chat/avatars");
 
@@ -35,9 +39,12 @@ export async function uploadAvatar(file) {
 }
 
 export async function uploadCover(file) {
+    // Nén ảnh trước khi upload
+    const compressedFile = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 });
+
     // 1. Upload ảnh trực tiếp từ client lên Cloudinary CDN
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", compressedFile);
     formData.append("upload_preset", UPLOAD_PRESET);
     formData.append("folder", "hola_chat/covers");
 

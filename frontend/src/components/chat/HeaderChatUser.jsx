@@ -26,7 +26,7 @@ export default function HeaderChatUser({
         }
         return (
             <img
-                src={`${isGroup ? image6 : userAvatar}`}
+                src={userAvatar}
                 alt={userName}
                 className="w-13 h-13 rounded-full object-cover border border-gray-300 mb-1"
             />

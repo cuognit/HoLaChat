@@ -267,7 +267,7 @@ public class RoomMemberService {
         // Online status từ Redis
         try {
             RBucket<String> statusBucket = redissonClient.getBucket(
-                    "user:status:" + member.getUser().getEmail().toLowerCase(), StringCodec.INSTANCE);
+                    "user:status:" + member.getUser().getEmail().toLowerCase());
             dto.setIsOnline("online".equals(statusBucket.get()));
         } catch (Exception e) {
             dto.setIsOnline(false);

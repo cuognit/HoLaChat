@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { X, ChevronLeft, Search, Users2, Check, Camera, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig";
+import axios from "axios";
+import { compressImage } from "../../../utils/imageCompressor";
 import { useChat } from "../../../hooks/useChat";
 import { useNavigate } from "react-router-dom";
 
@@ -78,10 +80,6 @@ export default function CreateGroupDialog({ onClose }) {
     const handleAvatarChange = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("Ảnh không được vượt quá 5MB");
-            return;
-        }
         setAvatarFile(file);
         setAvatarPreview(URL.createObjectURL(file));
     };
@@ -115,14 +113,18 @@ export default function CreateGroupDialog({ onClose }) {
         try {
             let avatarUrl = null;
 
-            // Upload ảnh nếu có
+            // Upload ảnh trực tiếp lên Cloudinary CDN nếu có chọn ảnh (đã được nén phía client)
             if (avatarFile) {
+                const compressedFile = await compressImage(avatarFile, { maxWidth: 800, maxHeight: 800, quality: 0.7 });
                 const formData = new FormData();
-                formData.append("file", avatarFile);
-                const uploadRes = await api.post("/auth/upload-avatar", formData, {
+                formData.append("file", compressedFile);
+                formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+                formData.append("folder", "hola_chat/group_avatars");
+
+                const uploadRes = await axios.post(import.meta.env.VITE_CLOUDINARY_UPLOAD_URL, formData, {
                     headers: { "Content-Type": "multipart/form-data" }
                 });
-                avatarUrl = uploadRes.data?.data?.url || uploadRes.data?.data || null;
+                avatarUrl = uploadRes.data?.secure_url || null;
             }
 
             const res = await api.post("/chat-rooms/group", {

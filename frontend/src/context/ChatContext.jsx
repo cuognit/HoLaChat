@@ -8,10 +8,12 @@ export default function ChatProvider({ children }) {
   const [typingUsersMap, setTypingUsersMap] = useState({}); // key: roomId, value: [{ userId, userName, avatarUrl }]
 
   const updateUserStatus = (email, isOnline, userId) => {
-    setUserStatusMap(prev => ({
-      ...prev,
-      [email]: isOnline
-    }));
+    setUserStatusMap(prev => {
+      const updated = { ...prev };
+      if (email) updated[email.toLowerCase()] = isOnline;
+      if (userId) updated[String(userId)] = isOnline;
+      return updated;
+    });
   };
 
   const updateTypingUser = useCallback((roomId, userId, userName, avatarUrl, isTyping) => {

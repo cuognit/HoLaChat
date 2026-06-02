@@ -147,7 +147,7 @@ export default function Message({
                     <div className="w-10 h-10 shrink-0" />
                 ) : (
                     <img
-                        src={avatar || "/notfound.png"}
+                        src={avatar || "/avatar.jpg"}
                         className="w-10 h-10 rounded-full object-cover border border-gray-300 cursor-pointer shrink-0"
                         alt=""
                     />
@@ -159,7 +159,7 @@ export default function Message({
                 <div className={`flex items-center gap-2 group/msg relative ${isSentByMe ? 'flex-row-reverse' : 'flex-row'}`}>
                     
                     {/* Bong bóng tin nhắn */}
-                    <div className={`relative px-4 py-1 rounded-2xl shadow-sm border max-w-lg transition-all duration-150 ${
+                    <div className={`relative px-4 py-2 rounded-2xl shadow-sm border max-w-lg transition-all duration-150 ${
                         isSentByMe 
                             ? 'bg-blue-50 text-blue-950 border-blue-200/50 hover:bg-blue-100/60' 
                             : 'bg-white text-gray-800 border-gray-100 hover:bg-gray-50/70'
@@ -196,24 +196,24 @@ export default function Message({
                     </div>
 
                     {/* 3 Nút Options (Trả lời, Chia sẻ, Thêm) bên cạnh */}
-                    <div className="flex items-center gap-1.5 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-200 pointer-events-none group-hover/msg:pointer-events-auto">
+                    <div className="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-200 pointer-events-none group-hover/msg:pointer-events-auto">
                         <button 
-                            className="flex items-center justify-center w-7 h-7 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
+                            className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
                             title="Trả lời"
                         >
-                            <Quote className="w-3.5 h-3.5 fill-current rotate-180" />
+                            <Quote className="w-2.5 h-2.5 fill-current rotate-180" />
                         </button>
                         <button 
-                            className="flex items-center justify-center w-7 h-7 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
+                            className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
                             title="Chia sẻ"
                         >
-                            <Forward className="w-3.5 h-3.5" />
+                            <Forward className="w-3 h-3" />
                         </button>
                         <button 
-                            className="flex items-center justify-center w-7 h-7 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
+                            className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
                             title="Khác"
                         >
-                            <MoreHorizontal className="w-3.5 h-3.5" />
+                            <MoreHorizontal className="w-3 h-3" />
                         </button>
                     </div>
 

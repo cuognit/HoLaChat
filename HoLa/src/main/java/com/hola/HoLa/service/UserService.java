@@ -225,7 +225,7 @@ public class UserService {
             return List.of();
         }
         
-        List<User> users = userRepository.findByEmailContainingIgnoreCaseAndEmailNot(keyword.trim(), currentEmail);
+        List<User> users = userRepository.searchByNameOrEmail(keyword.trim(), currentEmail);
         return users.stream()
                 .filter(User::getIsVerified) // Only return verified users
                 .map(user -> {

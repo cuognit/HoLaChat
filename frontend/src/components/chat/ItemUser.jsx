@@ -45,7 +45,7 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
             if (user.avatarUrl) {
                 return (
                     <img
-                        src={image6}
+                        src={user.avatarUrl}
                         alt={displayName}
                         className="w-12 h-12 rounded-full object-cover border border-gray-300"
                     />

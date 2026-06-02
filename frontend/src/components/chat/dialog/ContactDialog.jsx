@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import DialogWindow from "./DialogWindow";
 import FriendProfile from "./FriendProfile";
 export default function ContactDialog({ onClose, refreshKey }) {
-    const { currentUser, setSelectedUser } = useChat();
+    const { currentUser, setSelectedUser, userStatusMap } = useChat();
     const [activeTab, setActiveTab] = useState("friends"); // "friends" | "add-friend"
     const navigate = useNavigate();
     
@@ -145,6 +145,46 @@ export default function ContactDialog({ onClose, refreshKey }) {
         } catch (error) {
             console.error("Lỗi đồng ý kết bạn:", error);
             toast.error("Không thể đồng ý kết bạn.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Hủy yêu cầu kết bạn (Thu hồi yêu cầu đã gửi)
+    const handleCancelRequest = async () => {
+        if (!currentUser?.id || !searchResult?.id) return;
+        setActionLoading(true);
+        try {
+            const res = await api.post("/friendships/cancel", null, {
+                params: { receiverId: searchResult.id }
+            });
+            if (res.data?.status === 200) {
+                setFriendshipStatus("NONE");
+                toast.success("Đã hủy yêu cầu kết bạn!");
+            }
+        } catch (error) {
+            console.error("Lỗi hủy yêu cầu kết bạn:", error);
+            toast.error("Hủy yêu cầu kết bạn thất bại!");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Từ chối lời mời kết bạn từ đối phương
+    const handleDeclineRequest = async () => {
+        if (!currentUser?.id || !searchResult?.id) return;
+        setActionLoading(true);
+        try {
+            const res = await api.post("/friendships/decline", null, {
+                params: { senderId: searchResult.id }
+            });
+            if (res.data?.status === 200) {
+                setFriendshipStatus("NONE");
+                toast.success(`Đã từ chối lời mời kết bạn từ ${searchResult.userName}`);
+            }
+        } catch (error) {
+            console.error("Lỗi từ chối kết bạn:", error);
+            toast.error("Từ chối kết bạn thất bại!");
         } finally {
             setActionLoading(false);
         }
@@ -308,7 +348,9 @@ export default function ContactDialog({ onClose, refreshKey }) {
                             {friends.map((friend) => (
                                 <div
                                     key={friend.id}
-                                    className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition-all border border-gray-50 hover:border-gray-100 relative"
+                                    className={`flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl transition-all border border-gray-50 hover:border-gray-100 relative ${
+                                        activeMenuId === friend.id ? "z-40 shadow-xs" : "z-0"
+                                    }`}
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="relative">
@@ -329,10 +371,10 @@ export default function ContactDialog({ onClose, refreshKey }) {
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-1.5 z-10" ref={activeMenuId === friend.id ? dropdownRef : null}>
+                                    <div className="flex items-center gap-1.5 z-50" ref={activeMenuId === friend.id ? dropdownRef : null}>
                                         <button
                                             onClick={() => handleStartChat(friend)}
-                                            className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full text-xs font-semibold cursor-pointer transition-colors"
+                                            className="flex items-center gap-1 px-3 py-1.5 z-9 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full text-xs font-semibold cursor-pointer transition-colors"
                                         >
                                             <MessageSquare size={12} />
                                             Nhắn tin
@@ -341,7 +383,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
                                         {/* Nút 3 chấm */}
                                         <button
                                             onClick={() => setActiveMenuId(activeMenuId === friend.id ? null : friend.id)}
-                                            className="p-1.5 hover:bg-gray-200 active:bg-gray-300 rounded-full text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
+                                            className="p-1.5 z-20 hover:bg-gray-200 active:bg-gray-300 rounded-full text-gray-500 hover:text-gray-800 transition-colors cursor-pointer"
                                             title="Tùy chọn"
                                         >
                                             <MoreHorizontal size={16} />
@@ -399,63 +441,133 @@ export default function ContactDialog({ onClose, refreshKey }) {
                             </button>
                         </form>
 
-                        {searchResult ? (
-                            <div className="mt-4 flex flex-col items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                <img
-                                    src={searchResult.avatarUrl || "/avatar.jpg"}
-                                    alt={searchResult.userName}
-                                    className="w-16 h-16 rounded-full object-cover border border-gray-200 shadow-sm"
-                                />
-                                <h4 className="mt-2 text-base font-bold text-gray-800">{searchResult.userName}</h4>
-                                <p className="text-xs text-gray-400">{searchResult.email}</p>
+                        {searchResult ? (() => {
+                            // Lấy trạng thái hoạt động thời gian thực từ Context
+                            const isOnline = userStatusMap[String(searchResult.id)] ?? searchResult.isOnline ?? false;
+                            return (
+                                <div className="mt-4 flex items-center gap-4.5 p-4 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-100 transition-all duration-300 shadow-2xs">
+                                    {/* Avatar bo tròn kèm chấm xanh online realtime */}
+                                    <div className="relative shrink-0 w-13 h-13">
+                                        <img
+                                            src={searchResult.avatarUrl || "/avatar.jpg"}
+                                            alt={searchResult.userName}
+                                            className="w-full h-full rounded-full object-cover border border-gray-200/80 shadow-2xs"
+                                        />
+                                        <span
+                                            className={`absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2 border-white transition-colors duration-300
+                                                ${isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400"}`}
+                                        />
+                                    </div>
 
-                                <div className="mt-4 w-full flex justify-center">
-                                    {friendshipStatus === "NONE" && (
-                                        <button
-                                            onClick={handleSendRequest}
-                                            disabled={actionLoading}
-                                            className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-full text-sm font-semibold shadow-md cursor-pointer transition-all"
-                                        >
-                                            <UserPlus size={16} />
-                                            Thêm bạn bè
-                                        </button>
-                                    )}
+                                    {/* Thông tin người dùng */}
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="text-sm font-bold text-gray-900 truncate leading-snug">
+                                            {searchResult.userName}
+                                        </h4>
+                                        <p className="text-xs text-gray-400 truncate mt-0.5">
+                                            {searchResult.email}
+                                        </p>
+                                    </div>
 
-                                    {friendshipStatus === "SENT_PENDING" && (
-                                        <span className="px-5 py-2 bg-gray-200 text-gray-500 rounded-full text-xs font-semibold">
-                                            Đã gửi lời mời kết bạn
-                                        </span>
-                                    )}
+                                    {/* Khu vực nút bấm hành động */}
+                                    <div className="shrink-0 flex items-center gap-2">
+                                        {/* TRẠNG THÁI 1: CHƯA KẾT BẠN -> Thêm bạn + Nhắn tin */}
+                                        {friendshipStatus === "NONE" && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSendRequest}
+                                                    disabled={actionLoading}
+                                                    className="flex items-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 cursor-pointer disabled:bg-gray-300"
+                                                >
+                                                    {actionLoading ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={13} />}
+                                                    Thêm bạn
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleStartChat(searchResult)}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 active:scale-[0.98] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                >
+                                                    <MessageSquare size={13} />
+                                                    Nhắn tin
+                                                </button>
+                                            </>
+                                        )}
 
-                                    {friendshipStatus === "RECEIVED_PENDING" && (
-                                        <button
-                                            onClick={handleAcceptRequest}
-                                            disabled={actionLoading}
-                                            className="flex items-center gap-1.5 px-5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-full text-sm font-semibold shadow-md cursor-pointer transition-all"
-                                        >
-                                            <Check size={16} />
-                                            Chấp nhận lời mời
-                                        </button>
-                                    )}
+                                        {/* TRẠNG THÁI 2: ĐÃ GỬI YÊU CẦU -> Thu hồi + Nhắn tin */}
+                                        {friendshipStatus === "SENT_PENDING" && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelRequest}
+                                                    disabled={actionLoading}
+                                                    className="flex items-center gap-1 px-3 py-2 bg-red-50 hover:bg-red-100 active:scale-[0.98] text-red-600 hover:text-red-700 rounded-xl text-xs font-bold border border-red-100 hover:border-red-200 transition-all cursor-pointer"
+                                                >
+                                                    {actionLoading ? <Loader2 size={12} className="animate-spin" /> : <X size={13} />}
+                                                    Thu hồi
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleStartChat(searchResult)}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 active:scale-[0.98] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                >
+                                                    <MessageSquare size={13} />
+                                                    Nhắn tin
+                                                </button>
+                                            </>
+                                        )}
 
-                                    {friendshipStatus === "ACCEPTED" && (
-                                        <div className="flex flex-col items-center gap-2">
-                                            <span className="flex items-center gap-1 text-green-600 text-xs font-bold bg-green-50 px-3 py-1 rounded-full border border-green-200">
-                                                <Check size={14} />
-                                                Đã là bạn bè
-                                            </span>
-                                            <button
-                                                onClick={() => handleStartChat(searchResult)}
-                                                className="mt-1 flex items-center gap-1.5 px-4 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-full text-xs font-semibold cursor-pointer transition-colors"
-                                            >
-                                                <MessageSquare size={13} />
-                                                Nhắn tin ngay
-                                            </button>
-                                        </div>
-                                    )}
+                                        {/* TRẠNG THÁI 3: ĐỐI PHƯƠNG GỬI YÊU CẦU -> Từ chối + Đồng ý + Nhắn tin */}
+                                        {friendshipStatus === "RECEIVED_PENDING" && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleDeclineRequest}
+                                                    disabled={actionLoading}
+                                                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 active:scale-[0.98] text-gray-600 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                >
+                                                    Từ chối
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAcceptRequest}
+                                                    disabled={actionLoading}
+                                                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
+                                                >
+                                                    Đồng ý
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleStartChat(searchResult)}
+                                                    className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 active:scale-[0.98] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                >
+                                                    <MessageSquare size={13} />
+                                                    Nhắn tin
+                                                </button>
+                                            </>
+                                        )}
+
+                                        {/* TRẠNG THÁI 4: ĐÃ LÀ BẠN BÈ -> Badge bạn bè + Nhắn tin */}
+                                        {friendshipStatus === "ACCEPTED" && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-200 select-none shrink-0">
+                                                    Bạn bè
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleStartChat(searchResult)}
+                                                    className="flex items-center gap-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 active:scale-[0.98] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                >
+                                                    <MessageSquare size={13} />
+                                                    Nhắn tin
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
+                            );
+                        })()
+                         : (
                             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-2 mt-8">
                                 <Search size={32} className="stroke-[1.5] text-gray-300" />
                                 <p className="text-xs font-medium text-center">Tìm kiếm bạn bè bằng địa chỉ Email</p>

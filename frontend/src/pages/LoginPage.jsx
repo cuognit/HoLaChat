@@ -2,7 +2,7 @@ import { useContext, useState ,useRef} from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { AuthContext } from '../context/AuthContextInstance.js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import DialogWindow from '../components/chat/dialog/DialogWindow.jsx';
 import api, { setAuthToken } from '../api/axiosConfig';
 import ForgetPassword from '../components/auth/ForgetPassword.jsx';
@@ -12,6 +12,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
     const enableSubmit = email && password && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ;
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -24,7 +25,8 @@ export default function LoginPage() {
             setAccessToken(res.data.data);
             setAuthToken(res.data.data);
             
-            navigate("/");
+            const from = location.state?.from?.pathname || "/";
+            navigate(from, { replace: true });
         })
         .catch (error => {
             console.error(error.response.data);

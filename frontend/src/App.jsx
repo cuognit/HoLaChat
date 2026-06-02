@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage'
 import NotFound from './pages/NotFound'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import JoinGroupPage from './pages/JoinGroupPage'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster} from 'sonner'
 import './index.css'
@@ -26,6 +27,11 @@ function App() {
           <Route path="/c/:roomId" element={ 
             <ProtectedRoute>
               <HomePage />
+            </ProtectedRoute>} />
+
+          <Route path="/join/:encodedRoomId" element={ 
+            <ProtectedRoute>
+              <JoinGroupPage />
             </ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />

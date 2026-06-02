@@ -374,10 +374,19 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
 
                     <div className="flex-1 overflow-y-auto p-1">
                         {searchQuery.trim() ? (
-                            <SearchResultsList 
-                                isSearching={isSearching} 
-                                searchResults={searchResults} 
-                                onSelectSearchResult={handleSelectSearchResult} 
+                            <UnifiedSearchResults 
+                                isSearching={isSearching}
+                                localMatchedRooms={users.filter(room => {
+                                    const nameToCompare = room.isGroup 
+                                        ? (room.roomName || "Nhóm chat") 
+                                        : (room.targetUserName || "User");
+                                    return nameToCompare.toLowerCase().includes(searchQuery.trim().toLowerCase());
+                                })}
+                                globalUsers={searchResults}
+                                onSelectRoom={handleSelectUser}
+                                onSelectGlobalUser={handleSelectSearchResult}
+                                currentUserId={currentUser?.id}
+                                typingUsersMap={typingUsersMap}
                             />
                         ) : activeTab === "ưu-tiên" ? (
                             <PriorityRoomList 
@@ -403,27 +412,91 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
 
 
 
-function SearchResultsList({ isSearching, searchResults, onSelectSearchResult }) {
-    if (isSearching) return <DashRing className="w-6 h-6 mx-auto my-4 text-blue-400" />;
-    if (searchResults.length === 0) return <div className="p-4 text-center text-xs text-gray-400">Không tìm thấy ai</div>;
+function UnifiedSearchResults({ isSearching, localMatchedRooms, globalUsers, onSelectRoom, onSelectGlobalUser, currentUserId, typingUsersMap }) {
+    // Loại bỏ những user global đã có trong localMatchedRooms để tránh hiển thị trùng lặp
+    const localUserIds = new Set(
+        localMatchedRooms
+            .filter(r => !r.isGroup)
+            .map(r => String(r.targetUserId))
+    );
+    const filteredGlobalUsers = globalUsers.filter(u => !localUserIds.has(String(u.id)));
+
+    const hasLocal = localMatchedRooms.length > 0;
+    const hasGlobal = filteredGlobalUsers.length > 0;
+
+    if (isSearching && !hasLocal && !hasGlobal) {
+        return <DashRing className="w-6 h-6 mx-auto my-6 text-blue-400 animate-spin" />;
+    }
+
+    if (!hasLocal && !hasGlobal) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 text-center text-gray-400 gap-2 mt-8 bg-gray-50/50 rounded-2xl mx-2">
+                <Search className="w-8 h-8 text-gray-300 stroke-[1.5]" />
+                <p className="text-xs font-semibold">Không tìm thấy kết quả phù hợp</p>
+            </div>
+        );
+    }
 
     return (
-        <>
-            <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase bg-gray-50">Kết quả tìm kiếm</div>
-            {searchResults.map((user) => (
-                <div
-                    key={user.id}
-                    onClick={() => onSelectSearchResult(user)}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-md cursor-pointer transition-colors bg-white hover:bg-gray-100 border-b border-gray-50"
-                >
-                    <img src={user.avatarUrl || "/avatar.jpg"} alt={user.userName} className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-xs font-semibold text-gray-800 truncate">{user.userName}</h3>
-                        <p className="text-[10px] text-gray-400 truncate">{user.email}</p>
+        <div className="flex flex-col h-full animate-in fade-in duration-200">
+            {/* PHẦN 1: CÁC CUỘC TRÒ CHUYỆN VÀ NHÓM CHAT HIỆN CÓ */}
+            {hasLocal && (
+                <div className="flex flex-col">
+                    <div className="px-3.5 py-2 text-[10px] font-bold text-gray-400 uppercase bg-gray-50/60 tracking-wider select-none">
+                        Trò chuyện & Nhóm ({localMatchedRooms.length})
                     </div>
+                    {localMatchedRooms.map((room, index) => (
+                        <ItemUser
+                            key={room.id ?? room.roomId ?? index}
+                            user={room}
+                            currentUserId={currentUserId}
+                            currentUserName="Bạn"
+                            targetUserName={room.targetUserName || "User"}
+                            onSelect={onSelectRoom}
+                            isActive={false}
+                            typingUsers={(typingUsersMap[room.roomId] ?? []).filter(
+                                u => String(u.userId) !== String(currentUserId)
+                            )}
+                        />
+                    ))}
                 </div>
-            ))}
-        </>
+            )}
+
+            {/* PHẦN 2: TÌM KIẾM NGƯỜI DÙNG MỚI TRÊN HỆ THỐNG */}
+            {hasGlobal && (
+                <div className="flex flex-col mt-2">
+                    <div className="px-3.5 py-2 text-[10px] font-bold text-gray-400 uppercase bg-gray-50/60 tracking-wider select-none border-t border-gray-100/50 pt-3">
+                        Người dùng mới trên hệ thống ({filteredGlobalUsers.length})
+                    </div>
+                    {filteredGlobalUsers.map((user) => (
+                        <div
+                            key={user.id}
+                            onClick={() => onSelectGlobalUser(user)}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all bg-white hover:bg-gray-50/80 border-b border-gray-50/50 group"
+                        >
+                            <img 
+                                src={user.avatarUrl || "/avatar.jpg"} 
+                                alt={user.userName} 
+                                className="w-10 h-10 rounded-full object-cover border border-gray-200/80 shadow-2xs group-hover:scale-102 transition-transform" 
+                            />
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-sm font-semibold text-gray-800 truncate leading-snug">{user.userName}</h3>
+                                <p className="text-xs text-gray-400 truncate mt-0.5">{user.email}</p>
+                            </div>
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                Kết nối
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {isSearching && (
+                <div className="flex justify-center py-4 shrink-0">
+                    <DashRing className="w-5 h-5 text-blue-400" />
+                </div>
+            )}
+        </div>
     );
 }
 
