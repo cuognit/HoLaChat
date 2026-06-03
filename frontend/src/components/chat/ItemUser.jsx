@@ -74,8 +74,8 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
 
     // Last message preview
     const getLastMessagePreview = () => {
-        const content = user.lastMessage || "Hãy gửi lời chào ngay!";
         const msgType = user.lastMessageType;
+        const content = msgType === "IMAGE" ? "📷 Hình ảnh" : (user.lastMessage || "Hãy gửi lời chào ngay!");
 
         // System message: in nghiêng, không prefix
         if (msgType === "SYSTEM") {
@@ -95,6 +95,9 @@ export default function ItemUser({ user, onSelect, isActive = false, currentUser
 
         // Private
         const senderName = String(user.lastSenderId) === String(currentUserId) ? currentUserName : targetUserName;
+        if (String(user.lastSenderId) === String(currentUserId)) {
+                return `Bạn: ${content}`;
+            }
         return `${senderName}: ${content}`;
     };
 

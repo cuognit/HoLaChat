@@ -15,5 +15,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     Optional<Message> findFirstByRoomIdOrderByCreatedAtDesc(Long roomId);
     Page<Message> findByRoomIdOrderByCreatedAtDesc(Long roomId, Pageable pageable);
     void deleteAllByRoomId(Long roomId);
+    Page<Message> findByRoomIdAndMessageTypeOrderByCreatedAtDesc(Long roomId, com.hola.HoLa.model.MessageType messageType, Pageable pageable);
 }
 

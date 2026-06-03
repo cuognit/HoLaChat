@@ -1,4 +1,5 @@
 import { CheckCircle2, ThumbsUp, Quote, Forward, MoreHorizontal } from "lucide-react";
+import ImageGrid from "./ImageGrid";
 
 export default function Message({ 
     content, 
@@ -159,18 +160,28 @@ export default function Message({
                 <div className={`flex items-center gap-2 group/msg relative ${isSentByMe ? 'flex-row-reverse' : 'flex-row'}`}>
                     
                     {/* Bong bóng tin nhắn */}
-                    <div className={`relative px-4 py-2 rounded-2xl shadow-sm border max-w-lg transition-all duration-150 ${
+                    <div className={`relative ${messageType === 'IMAGE' ? 'p-1' : 'px-4 py-2'} rounded-2xl shadow-sm border max-w-lg transition-all duration-150 ${
                         isSentByMe 
                             ? 'bg-blue-50 text-blue-950 border-blue-200/50 hover:bg-blue-100/60' 
                             : 'bg-white text-gray-800 border-gray-100 hover:bg-gray-50/70'
                     }`}>
                         {shouldShowSenderName && (
-                            <p className="text-[11px] font-semibold text-orange-600 mb-0.5 select-none">{senderName}</p>
+                            <p className={`text-[11px] font-semibold text-orange-600 mb-0.5 select-none ${messageType === 'IMAGE' ? 'px-3 pt-1' : ''}`}>{senderName}</p>
                         )}
-                        <p className="wrap-break-word whitespace-pre-wrap leading-relaxed text-[14.5px]">{content}</p>
+                        {messageType === 'IMAGE' ? (() => {
+                            let imageUrls = [];
+                            try {
+                                imageUrls = JSON.parse(content);
+                            } catch {
+                                imageUrls = [content];
+                            }
+                            return <ImageGrid images={imageUrls} />;
+                        })() : (
+                            <p className="wrap-break-word whitespace-pre-wrap leading-relaxed text-[14.5px]">{content}</p>
+                        )}
                         
                         {shouldShowTime() && (
-                            <p className={`text-[10px] text-gray-400 mt-2 select-none ${isSentByMe ? 'text-left' : 'text-right'}`}>
+                            <p className={`text-[10px] text-gray-400 mt-2 select-none ${messageType === 'IMAGE' ? 'px-3 pb-1' : ''} ${isSentByMe ? 'text-left' : 'text-right'}`}>
                                 {time}
                             </p>
                         )}
@@ -198,22 +209,22 @@ export default function Message({
                     {/* 3 Nút Options (Trả lời, Chia sẻ, Thêm) bên cạnh */}
                     <div className="flex items-center gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-200 pointer-events-none group-hover/msg:pointer-events-auto">
                         <button 
-                            className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
+                            className="flex items-center justify-center w-6 h-6 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
                             title="Trả lời"
                         >
                             <Quote className="w-2.5 h-2.5 fill-current rotate-180" />
                         </button>
                         <button 
-                            className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
+                            className="flex items-center justify-center w-6 h-6 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
                             title="Chia sẻ"
                         >
-                            <Forward className="w-3 h-3" />
+                            <Forward className="w-4 h-4" />
                         </button>
                         <button 
-                            className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-gray-700 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
+                            className="flex items-center justify-center w-6 h-6 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer hover:scale-105 active:scale-95" 
                             title="Khác"
                         >
-                            <MoreHorizontal className="w-3 h-3" />
+                            <MoreHorizontal className="w-4 h-4" />
                         </button>
                     </div>
 

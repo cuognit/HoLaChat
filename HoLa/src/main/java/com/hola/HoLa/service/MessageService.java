@@ -49,11 +49,21 @@ public class MessageService {
         User sender = userRepo.findById(request.getSenderId())
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
 
+        // Determine message type from request, default to TEXT
+        MessageType type = MessageType.TEXT;
+        if (request.getMessageType() != null) {
+            try {
+                type = MessageType.valueOf(request.getMessageType().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Invalid type, fallback to TEXT
+            }
+        }
+
         Message message = new Message();
         message.setRoom(room);
         message.setSender(sender);
-        message.setContent(request.getContent().trim());
-        message.setMessageType(MessageType.TEXT);
+        message.setContent(type == MessageType.IMAGE ? request.getContent() : request.getContent().trim());
+        message.setMessageType(type);
 
         return toDto(messageRepo.save(message));
     }
@@ -114,5 +124,35 @@ public class MessageService {
         }
         dto.setCreatedAt(message.getCreatedAt());
         return dto;
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getImagesByRoomId(Long roomId, int page, int size) {
+        if (roomId == null) {
+            throw new RuntimeException("Room id is required");
+        }
+        if (!chatRoomRepository.existsById(roomId)) {
+            throw new RuntimeException("Chat room not found");
+        }
+
+        Page<Message> messagePage = messageRepo.findByRoomIdAndMessageTypeOrderByCreatedAtDesc(
+                roomId, MessageType.IMAGE, PageRequest.of(page, size));
+
+        List<String> allUrls = new java.util.ArrayList<>();
+        for (Message msg : messagePage.getContent()) {
+            String content = msg.getContent();
+            if (content != null && content.startsWith("[")) {
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    List<String> urls = mapper.readValue(content, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
+                    allUrls.addAll(urls);
+                } catch (Exception e) {
+                    allUrls.add(content);
+                }
+            } else if (content != null) {
+                allUrls.add(content);
+            }
+        }
+        return allUrls;
     }
 }

@@ -211,9 +211,9 @@ export default function DisplayMessage() {
                 {isLoadingMessages ? (
                     <div className="flex-1 flex flex-col items-center justify-center gap-2 m-auto"> 
                         <Ripple className="h-15 w-15 text-blue-400" />
-                        <p className="text-center text-gray-500 mb-2 text-[14px]">
+                        {/* <p className="text-center text-gray-500 mb-2 text-[14px]">
                             Nếu chờ quá lâu, vui lòng tải lại trang
-                        </p>
+                        </p> */}
                     </div>
                     // <div className="w-8 h-8 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin m-auto"></div>
                 ) : messages.length > 0 ? (() => {

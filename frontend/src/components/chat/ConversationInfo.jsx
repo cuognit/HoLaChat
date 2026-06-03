@@ -16,8 +16,9 @@ import {
   Link,
   Loader2,
   Camera,
+  ImageIcon,
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "../../hooks/useChat";
 import { useChatSocket } from "../../hooks/useChatSocket";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,8 @@ import { toast } from "sonner";
 import ConfirmDialog from "./dialog/ConfirmDialog";
 import AddMemberDialog from "./dialog/AddMemberDialog";
 import DialogWindow from "./dialog/DialogWindow";
+import ImageLightbox from "./ImageLightbox";
+import { getImagesByRoom } from "../../services/messageService";
 
 export default function ConversationInfo() {
   const { selectedUser, setSelectedUser, currentUser } = useChat();
@@ -80,6 +83,15 @@ export default function ConversationInfo() {
 
   // Invite link
   const [inviteUrl, setInviteUrl] = useState(null);
+
+  // Image gallery
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [galleryPage, setGalleryPage] = useState(0);
+  const [galleryHasMore, setGalleryHasMore] = useState(true);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [galleryExpanded, setGalleryExpanded] = useState(false);
+  const galleryRoomIdRef = useRef(null);
   const [isLoadingLink, setIsLoadingLink] = useState(false);
 
   // Reset khi đổi phòng
@@ -89,7 +101,46 @@ export default function ConversationInfo() {
     setActiveTab("info");
     setEditingName(false);
     setInviteUrl(null);
+    // Reset gallery
+    setGalleryImages([]);
+    setGalleryPage(0);
+    setGalleryHasMore(true);
+    setGalleryExpanded(false);
+    galleryRoomIdRef.current = null;
   }, [selectedUser?.id, selectedUser?.roomId]);
+
+  // Fetch gallery images khi mở section
+  const fetchGalleryImages = useCallback(async (roomId, page) => {
+    if (!roomId) return;
+    setIsLoadingGallery(true);
+    try {
+      const images = await getImagesByRoom(roomId, page, 12);
+      if (images.length < 12) setGalleryHasMore(false);
+      setGalleryImages(prev => page === 0 ? images : [...prev, ...images]);
+      galleryRoomIdRef.current = roomId;
+    } catch {
+      // Silent fail
+    } finally {
+      setIsLoadingGallery(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const roomId = selectedUser?.roomId || selectedUser?.id;
+    if (openSections.media && roomId && galleryRoomIdRef.current !== roomId) {
+      setGalleryImages([]);
+      setGalleryPage(0);
+      setGalleryHasMore(true);
+      fetchGalleryImages(roomId, 0);
+    }
+  }, [openSections.media, selectedUser?.roomId, selectedUser?.id, fetchGalleryImages]);
+
+  useEffect(() => {
+    if (galleryPage > 0) {
+      const roomId = selectedUser?.roomId || selectedUser?.id;
+      fetchGalleryImages(roomId, galleryPage);
+    }
+  }, [galleryPage]);
 
   // Fetch members khi chuyển tab
   useEffect(() => {
@@ -545,15 +596,68 @@ export default function ConversationInfo() {
                 )}
               </button>
               {openSections.media && (
-                <div className="px-4 pb-4 pt-1 flex justify-center">
-                  <p className="text-sm text-gray-500 text-center">
-                    Chưa có Ảnh/Video được chia sẻ
-                    <br />
-                    trong hội thoại này
-                  </p>
+                <div className="px-4 pb-3 pt-1">
+                  {galleryImages.length === 0 && !isLoadingGallery ? (
+                    <p className="text-sm text-gray-500 text-center py-2">
+                      Chưa có Ảnh/Video được chia sẻ
+                      <br />
+                      trong hội thoại này
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-1 rounded-lg overflow-hidden">
+                        {(galleryExpanded ? galleryImages : galleryImages.slice(0, 6)).map((url, index) => (
+                          <div
+                            key={`${url}-${index}`}
+                            className="aspect-square cursor-pointer overflow-hidden bg-gray-100 hover:brightness-90 transition-all"
+                            onClick={() => setLightboxIndex(index)}
+                          >
+                            <img
+                              src={url}
+                              alt={`Ảnh ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      {galleryExpanded && galleryHasMore && (
+                        <button
+                          onClick={() => setGalleryPage(prev => prev + 1)}
+                          disabled={isLoadingGallery}
+                          className="w-full mt-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer font-medium disabled:text-gray-400"
+                        >
+                          {isLoadingGallery ? "Đang tải..." : "Xem thêm"}
+                        </button>
+                      )}
+                      {!galleryExpanded && galleryImages.length > 6 && (
+                        <button
+                          onClick={() => setGalleryExpanded(true)}
+                          className="w-full mt-2 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer font-medium"
+                        >
+                          Xem tất cả
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {isLoadingGallery && galleryImages.length === 0 && (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="animate-spin text-blue-400 w-5 h-5" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Image Lightbox */}
+            {lightboxIndex !== null && (
+              <ImageLightbox
+                images={galleryImages}
+                currentIndex={lightboxIndex}
+                onClose={() => setLightboxIndex(null)}
+                onNavigate={(index) => setLightboxIndex(index)}
+              />
+            )}
 
             {/* File */}
             <div className="border-b border-gray-100">
