@@ -1,13 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Message from "./Message";
 import { useChat } from "../../hooks/useChat";
-import { getMessagesByRoom } from "../../services/messageService";
+import { useChatSocket } from "../../hooks/useChatSocket";
+import { getMessagesByRoomFiltered, deleteMessageForMe } from "../../services/messageService";
 import { normalizeIncomingMessage, parseApiDate } from "../../utils/chatMessage";
 import { ArrowDown, Loader2, Loader } from "lucide-react";
 import { DashRing, BouncingDots, Ripple} from "../LoadingUI";
 import TypingIndicator from "./TypingIndicator";
-export default function DisplayMessage() {
+import ConfirmDialog from "./dialog/ConfirmDialog";
+
+export default function DisplayMessage({ onReply, onShare }) {
     const { selectedUser, setSelectedUser, currentUser } = useChat();
+    const { subscribe, publish, isConnected } = useChatSocket();
     const containerRef = useRef(null);
     const observerTarget = useRef(null);
     const bottomObserverTarget = useRef(null);
@@ -21,12 +25,28 @@ export default function DisplayMessage() {
     const currentUserId = currentUser?.id;
     const latestMessageIdRef = useRef(null);
     const isLoadingRef = useRef(false);
+    const recallSubscriptionRef = useRef(null);
+    const subscribedRecallRoomRef = useRef(null);
+
+    // Confirm dialog state
+    const [confirmDialog, setConfirmDialog] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        type: "danger",
+        confirmText: "",
+        onConfirm: null,
+    });
     
     const scrollToBottom = () => {
         if (containerRef.current) {
-            containerRef.current.scrollTop = 0;
+            containerRef.current.scrollTo({
+                top: 0,
+                behavior: "smooth",
+            });
         }
     };
+
 
     useEffect(() => {
         if (!messages || messages.length === 0) return;
@@ -39,7 +59,6 @@ export default function DisplayMessage() {
             const isSentByMe = lastMsg.senderId === currentUserId;
 
             if (containerRef.current) {
-                // Auto scroll down if I just sent a message, OR if I'm at page 0 (initial load), OR if I was already at the bottom
                 if (isSentByMe || page === 0 || !showScrollButton) {
                     setTimeout(() => {
                         if (containerRef.current) containerRef.current.scrollTop = 0;
@@ -54,6 +73,39 @@ export default function DisplayMessage() {
         setHasMore(true);
         setIsLoadingMessages(false);
     }, [activeRoomId]);
+
+    // Subscribe to recall events via WebSocket
+    useEffect(() => {
+        if (!isConnected || !activeRoomId) return;
+        if (subscribedRecallRoomRef.current === activeRoomId) return;
+
+        recallSubscriptionRef.current?.unsubscribe();
+
+        const sub = subscribe(`/topic/room/${activeRoomId}/recall`, (recalledMsg) => {
+            if (!recalledMsg?.id) return;
+
+            setSelectedUser(prev => {
+                if (!prev || prev.roomId !== recalledMsg.roomId) return prev;
+                const updatedMessages = (prev.messages || []).map(msg =>
+                    msg.id === recalledMsg.id
+                        ? { ...msg, recalled: true, content: "Tin nhắn đã được thu hồi", messageType: "TEXT" }
+                        : msg
+                );
+                return { ...prev, messages: updatedMessages };
+            });
+        });
+
+        if (sub) {
+            recallSubscriptionRef.current = sub;
+            subscribedRecallRoomRef.current = activeRoomId;
+        }
+
+        return () => {
+            recallSubscriptionRef.current?.unsubscribe();
+            recallSubscriptionRef.current = null;
+            subscribedRecallRoomRef.current = null;
+        };
+    }, [activeRoomId, isConnected, subscribe, setSelectedUser]);
 
     useEffect(() => {
         if (!selectedUser || !activeRoomId || !currentUserId) {
@@ -74,13 +126,13 @@ export default function DisplayMessage() {
             }
 
             try {               
-                const roomMessages = await getMessagesByRoom(activeRoomId, page, 20);
+                const response = await getMessagesByRoomFiltered(activeRoomId, currentUserId, page, 20);
                 if (!isMounted) {
                     return;
                 }
-                if (roomMessages.length < 20) {
-                    setHasMore(false);
-                }
+                const roomMessages = response.messages || [];
+                setHasMore(response.hasMore || false);
+
                 const normalizedMessages = roomMessages.map((message) =>
                     normalizeIncomingMessage(message, currentUserId)
                 );
@@ -93,7 +145,6 @@ export default function DisplayMessage() {
                     if (page === 0) {
                         newMessages = normalizedMessages;
                     } else {
-                        // Remove duplicates when prepending older messages
                         const existingIds = new Set(existingMessages.map(m => m.id));
                         const uniqueOlderMessages = normalizedMessages.filter(m => !existingIds.has(m.id));
                         newMessages = [...uniqueOlderMessages, ...existingMessages];
@@ -132,7 +183,7 @@ export default function DisplayMessage() {
     useEffect(() => {
         const option = {
             root: containerRef.current,
-            rootMargin: "100px", // Trigger slightly earlier
+            rootMargin: "100px",
             threshold: 0
         };
         const observer = new IntersectionObserver(handleObserver, option);
@@ -147,7 +198,6 @@ export default function DisplayMessage() {
 
     const handleBottomObserver = useCallback((entries) => {
         const target = entries[0];
-        // If bottom is NOT intersecting, it means we are scrolled up
         setShowScrollButton(!target.isIntersecting);
     }, []);
 
@@ -196,6 +246,61 @@ export default function DisplayMessage() {
         </div>
     );
 
+    const handleDeleteForMe = useCallback((message) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Xóa tin nhắn phía tôi",
+            message: "Tin nhắn sẽ bị xóa khỏi giao diện của bạn nhưng vẫn hiển thị ở phía người khác. Bạn chắc chắn?",
+            type: "danger",
+            confirmText: "Xóa",
+            onConfirm: async () => {
+                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                try {
+                    await deleteMessageForMe(message.id, currentUserId);
+                    setSelectedUser(prev => {
+                        if (!prev) return prev;
+                        return {
+                            ...prev,
+                            messages: (prev.messages || []).filter(m => m.id !== message.id),
+                        };
+                    });
+                } catch (error) {
+                    console.error("Xóa tin nhắn thất bại:", error);
+                }
+            },
+        });
+    }, [currentUserId, setSelectedUser]);
+
+    const handleRecall = useCallback((message) => {
+        setConfirmDialog({
+            isOpen: true,
+            title: "Thu hồi tin nhắn",
+            message: "Tin nhắn sẽ bị thu hồi khỏi tất cả mọi người trong cuộc trò chuyện. Bạn chắc chắn?",
+            type: "warning",
+            confirmText: "Thu hồi",
+            onConfirm: () => {
+                setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                try {
+                    publish("/app/message/recall", {
+                        messageId: message.id,
+                        userId: currentUserId,
+                    });
+                    setSelectedUser(prev => {
+                        if (!prev) return prev;
+                        const updatedMessages = (prev.messages || []).map(m =>
+                            m.id === message.id
+                                ? { ...m, recalled: true, content: "Tin nhắn đã được thu hồi", messageType: "TEXT" }
+                                : m
+                        );
+                        return { ...prev, messages: updatedMessages };
+                    });
+                } catch (error) {
+                    console.error("Thu hồi tin nhắn thất bại:", error);
+                }
+            },
+        });
+    }, [currentUserId, publish, setSelectedUser]);
+
     if (!selectedUser) {
         return null;
     }
@@ -203,19 +308,13 @@ export default function DisplayMessage() {
     return (
         <div className="relative flex-1 flex flex-col overflow-hidden">
             <div ref={containerRef} className="bg-gray-100 flex-1 px-4 overflow-y-auto flex flex-col-reverse relative">
-                {/* Typing indicator */}
                 <TypingIndicator />
-                {/* Cảm biến vị trí dưới cùng kiêm khoảng đệm 24px */}
                 <div ref={bottomObserverTarget} className="h-6 w-full shrink-0"></div>
 
                 {isLoadingMessages ? (
                     <div className="flex-1 flex flex-col items-center justify-center gap-2 m-auto"> 
                         <Ripple className="h-15 w-15 text-blue-400" />
-                        {/* <p className="text-center text-gray-500 mb-2 text-[14px]">
-                            Nếu chờ quá lâu, vui lòng tải lại trang
-                        </p> */}
                     </div>
-                    // <div className="w-8 h-8 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin m-auto"></div>
                 ) : messages.length > 0 ? (() => {
                     const reversedMessages = [...messages].reverse();
                     return reversedMessages.map((message, index) => {
@@ -228,10 +327,9 @@ export default function DisplayMessage() {
                         const nextMessageSenderId = nextMessage?.senderId ?? null;
                         const previousSenderId = previousMessage?.senderId ?? null;
 
-                        const isLastMessage = index === 0; // Because we are iterating the reversed array
+                        const isLastMessage = index === 0;
                         const isSentByMe = message.whoSend === "self-end";
 
-                        // seenByUsers: lọc bỏ chính mình, chỉ hiện ở tin cuối mình gửi
                         const seenByUsers = isLastMessage && isSentByMe
                             ? (selectedUser.seenByUsers ?? []).filter(
                                 u => String(u.userId) !== String(currentUserId)
@@ -265,6 +363,13 @@ export default function DisplayMessage() {
                                     messageType={message.messageType}
                                     senderName={message.senderName}
                                     isGroup={selectedUser.isGroup}
+                                    recalled={message.recalled}
+                                    messageId={message.id}
+                                    messageData={message}
+                                    onDeleteForMe={() => handleDeleteForMe(message)}
+                                    onRecall={() => handleRecall(message)}
+                                    onReplyClick={() => onReply && onReply(message)}
+                                    onShareClick={() => onShare && onShare(message)}
                                 />
                                 {showDateDivider && renderDateDivider(formatDateDivider(message.createdAt))}
                             </React.Fragment>
@@ -276,7 +381,6 @@ export default function DisplayMessage() {
                     </div>
                 )}
                 
-                {/* Invisible element to trigger intersection observer for infinite scroll */}
                 <div ref={observerTarget} className="h-4 w-full"></div>
                 {!isLoadingMessages && isFetchingMore && (
                     <div className="w-full flex justify-center my-2">
@@ -285,7 +389,6 @@ export default function DisplayMessage() {
                 )}
             </div>
 
-            {/* Nút cuộn xuống dưới cùng */}
             {showScrollButton && (
                 <button 
                     onClick={scrollToBottom}
@@ -295,6 +398,16 @@ export default function DisplayMessage() {
                     <ArrowDown className="w-5 h-5" />
                 </button>
             )}
+
+            <ConfirmDialog
+                isOpen={confirmDialog.isOpen}
+                title={confirmDialog.title}
+                message={confirmDialog.message}
+                type={confirmDialog.type}
+                confirmText={confirmDialog.confirmText}
+                onConfirm={confirmDialog.onConfirm}
+                onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+            />
         </div>
     );
 }

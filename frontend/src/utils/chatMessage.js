@@ -31,5 +31,11 @@ export function normalizeIncomingMessage(message, currentUserId) {
     senderAvatarUrl: message.senderAvatarUrl,
     createdAt: message.createdAt,
     messageType: message.messageType,
+    recalled: message.recalled ?? false,
+    replyToId: message.replyToId,
+    replyToSenderName: message.replyToSenderName,
+    replyToContent: message.replyToContent,
+    replyToMessageType: message.replyToMessageType,
+    forwarded: message.forwarded ?? false,
   };
 }

@@ -8,11 +8,13 @@ import { compressImage } from "../../utils/imageCompressor";
 import { uploadImages } from "../../services/messageService";
 import EmojiPicker from "emoji-picker-react";
 
+import { Quote } from 'lucide-react';
+
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB (nén trước khi upload)
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
-export default function SendChat() {
+export default function SendChat({ replyingToMessage, onCancelReply }) {
     const { selectedUser, setSelectedUser, currentUser } = useChat();
     const { isConnected, publish, subscribe } = useChatSocket();
     const currentUserId = currentUser?.id;
@@ -452,6 +454,9 @@ export default function SendChat() {
             senderId: currentUserId,
             content: messageToSend,
         };
+        if (replyingToMessage) {
+            payload.replyToId = replyingToMessage.id;
+        }
 
         if (targetUserId) {
             payload.receiverId = targetUserId;
@@ -471,6 +476,7 @@ export default function SendChat() {
         try {
             publish("/app/chat", payload);
             if (!isThumbsUp) setInputMessage("");
+            if (onCancelReply) onCancelReply();
         } catch (error) {
             console.error("Khong the gui tin nhan qua socket:", error);
             appendLocalMessage(messageToSend);
@@ -512,6 +518,9 @@ export default function SendChat() {
                 content,
                 messageType: "IMAGE",
             };
+            if (replyingToMessage) {
+                payload.replyToId = replyingToMessage.id;
+            }
 
             if (targetUserId) {
                 payload.receiverId = targetUserId;
@@ -524,11 +533,13 @@ export default function SendChat() {
             if (!isConnected) {
                 appendLocalMessage(content, "IMAGE");
                 console.warn("Socket dang offline, tin nhan moi chi duoc hien thi tam tren FE.");
+                if (onCancelReply) onCancelReply();
                 return;
             }
 
             try {
                 publish("/app/chat", payload);
+                if (onCancelReply) onCancelReply();
             } catch (error) {
                 console.error("Khong the gui tin nhan qua socket:", error);
                 appendLocalMessage(content, "IMAGE");
@@ -625,6 +636,45 @@ export default function SendChat() {
                             <ImagePlus className="w-5 h-5 text-gray-400" />
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* Reply Banner */}
+            {replyingToMessage && (
+                <div className="flex items-start justify-between bg-gray-200 border-l-4 border-blue-500 rounded-lg px-3 py-2 mb-2 mt-2 relative shadow-sm">
+                    <div className="flex-1 min-w-0 flex flex-col pr-6">
+                        <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-xs mb-0.5">
+                            <Quote className="w-3 h-3 fill-current rotate-180" />
+                            <span>Trả lời <span className="text-gray-800 ml-1">{replyingToMessage.senderName || "Người dùng"}</span></span>
+                        </div>
+                        {replyingToMessage.messageType === 'IMAGE' ? (
+                            <div className="flex items-center gap-2 mt-1">
+                                {(() => {
+                                    let imgUrl = "";
+                                    try {
+                                        const urls = JSON.parse(replyingToMessage.content);
+                                        imgUrl = Array.isArray(urls) ? urls[0] : replyingToMessage.content;
+                                    } catch {
+                                        imgUrl = replyingToMessage.content;
+                                    }
+                                    return (
+                                        <img src={imgUrl} alt="Reply Thumbnail" className="w-8 h-8 object-cover rounded shadow-sm border border-gray-200" />
+                                    );
+                                })()}
+                                <span className="text-[13px] text-gray-500 italic">[Hình ảnh]</span>
+                            </div>
+                        ) : (
+                            <p className="text-[13px] text-gray-600 truncate">{replyingToMessage.content}</p>
+                        )}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onCancelReply}
+                        className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 cursor-pointer p-1 rounded-full hover:bg-gray-200/50 transition-colors"
+                        title="Hủy trả lời"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
             )}
 

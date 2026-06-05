@@ -9,4 +9,6 @@ public class PrivateMessageRequest {
     private Long receiverId;
     private String content;
     private String messageType; // TEXT, IMAGE - optional, defaults to TEXT
+    private Long replyToId;
+    private Boolean forwarded = false;
 }

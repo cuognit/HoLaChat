@@ -4,7 +4,7 @@ export async function getMessagesByRoom(roomId, page = 0, size = 20) {
     const response = await api.get(`/messages/room/${roomId}`, {
         params: { page, size }
     });
-    return response.data?.data ?? [];
+    return response.data?.data ?? { messages: [], hasMore: false };
 }
 
 /**
@@ -35,4 +35,18 @@ export async function getImagesByRoom(roomId, page = 0, size = 12) {
         params: { page, size }
     });
     return response.data?.data ?? [];
+}
+
+export async function deleteMessageForMe(messageId, userId) {
+    const response = await api.delete(`/messages/${messageId}/delete-for-me`, {
+        params: { userId }
+    });
+    return response.data;
+}
+
+export async function getMessagesByRoomFiltered(roomId, userId, page = 0, size = 20) {
+    const response = await api.get(`/messages/room/${roomId}/filtered`, {
+        params: { userId, page, size }
+    });
+    return response.data?.data ?? { messages: [], hasMore: false };
 }

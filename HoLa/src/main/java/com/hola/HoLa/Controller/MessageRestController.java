@@ -7,6 +7,7 @@ import com.hola.HoLa.service.MessageService;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,11 +23,11 @@ public class MessageRestController {
     private CloudinaryService cloudinaryService;
 
     @GetMapping("/room/{roomId}")
-    public ResponseEntity<ResponseApi<List<MessageDTO>>> getMessagesByRoom(
+    public ResponseEntity<ResponseApi<Map<String, Object>>> getMessagesByRoom(
             @PathVariable Long roomId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<MessageDTO> messages = messageService.getMessagesByRoomId(roomId, page, size);
+        Map<String, Object> messages = messageService.getMessagesByRoomId(roomId, page, size);
         return ResponseEntity.ok(new ResponseApi<>(200, "Success", messages));
     }
 
@@ -77,5 +78,28 @@ public class MessageRestController {
             @RequestParam(defaultValue = "12") int size) {
         List<String> images = messageService.getImagesByRoomId(roomId, page, size);
         return ResponseEntity.ok(new ResponseApi<>(200, "Success", images));
+    }
+
+    @DeleteMapping("/{messageId}/delete-for-me")
+    public ResponseEntity<ResponseApi<Void>> deleteMessageForMe(
+            @PathVariable Long messageId,
+            @RequestParam Long userId) {
+        try {
+            messageService.deleteMessageForUser(messageId, userId);
+            return ResponseEntity.ok(new ResponseApi<>(200, "Deleted for user", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseApi<>(400, e.getMessage(), null));
+        }
+    }
+
+    @GetMapping("/room/{roomId}/filtered")
+    public ResponseEntity<ResponseApi<Map<String, Object>>> getMessagesByRoomFiltered(
+            @PathVariable Long roomId,
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Map<String, Object> messages = messageService.getMessagesByRoomId(roomId, page, size, userId);
+        return ResponseEntity.ok(new ResponseApi<>(200, "Success", messages));
     }
 }

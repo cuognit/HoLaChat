@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.hola.HoLa.dto.RecallMessageRequest;
 
 @Controller
 public class MessageController {
@@ -113,6 +114,24 @@ public class MessageController {
                 "/topic/room/" + request.getRoomId() + "/typing",
                 request
         );
+    }
+
+    @MessageMapping("/message/recall")
+    @Transactional
+    public void recallMessage(RecallMessageRequest request) {
+        if (request.getMessageId() == null || request.getUserId() == null) return;
+
+        try {
+            MessageDTO recalled = messageService.recallMessage(request.getMessageId(), request.getUserId());
+
+            // Broadcast event thu hồi tới tất cả thành viên trong phòng
+            messagingTemplate.convertAndSend(
+                "/topic/room/" + recalled.getRoomId() + "/recall",
+                recalled
+            );
+        } catch (RuntimeException e) {
+            System.err.println("Recall failed: " + e.getMessage());
+        }
     }
 
     /**

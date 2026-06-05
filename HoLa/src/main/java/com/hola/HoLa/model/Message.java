@@ -37,4 +37,14 @@ public class Message {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    @Column(name = "recalled")
+    private Boolean recalled = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_id")
+    private Message replyTo;
+
+    @Column(name = "forwarded")
+    private Boolean forwarded = false;
 }

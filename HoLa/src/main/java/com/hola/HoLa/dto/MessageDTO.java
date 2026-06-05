@@ -10,7 +10,13 @@ public class MessageDTO {
     private Long roomId;
     private String content;
     private String messageType;
-    
+    private Boolean recalled = false;
+    private Boolean forwarded = false;
+
+    private Long replyToId;
+    private String replyToSenderName;
+    private String replyToContent;
+    private String replyToMessageType;
 
     private Long senderId;
     private String senderName;
