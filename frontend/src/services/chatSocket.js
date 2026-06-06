@@ -28,6 +28,8 @@ function createClient() {
     });
 }
 
+const listeners = new Set();
+
 export function getChatSocketClient() {
     if (!stompClient) {
         stompClient = createClient();
@@ -36,35 +38,47 @@ export function getChatSocketClient() {
     return stompClient;
 }
 
-export function activateChatSocket({ onConnect, onStompError, onWebSocketClose, onWebSocketError } = {}) {
+export function activateChatSocket(callbacks = {}) {
     const client = getChatSocketClient();
 
+    listeners.add(callbacks);
+
     client.onConnect = (frame) => {
-        onConnect?.(frame);
+        listeners.forEach(l => l.onConnect?.(frame));
     };
 
     client.onStompError = (frame) => {
-        onStompError?.(frame);
+        listeners.forEach(l => l.onStompError?.(frame));
     };
 
     client.onWebSocketClose = (event) => {
-        onWebSocketClose?.(event);
+        listeners.forEach(l => l.onWebSocketClose?.(event));
     };
 
     client.onWebSocketError = (event) => {
-        onWebSocketError?.(event);
+        listeners.forEach(l => l.onWebSocketError?.(event));
     };
 
     if (!client.active) {
         client.activate();
+    } else if (client.connected) {
+        callbacks.onConnect?.();
     }
 
     return client;
 }
 
-export async function deactivateChatSocket() {
+export function deactivateChatSocket(callbacks) {
+    if (callbacks) {
+        listeners.delete(callbacks);
+    }
+}
+
+export async function forceDeactivateChatSocket() {
+    listeners.clear();
     if (stompClient?.active) {
         await stompClient.deactivate();
+        stompClient = null;
     }
 }
 

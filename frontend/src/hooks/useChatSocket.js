@@ -12,12 +12,13 @@ export function useChatSocket() {
     const subscriptionsRef = useRef([]);
 
     useEffect(() => {
-        const client = activateChatSocket({
+        const callbacks = {
             onConnect: () => setIsConnected(true),
             onStompError: () => setIsConnected(false),
             onWebSocketClose: () => setIsConnected(false),
             onWebSocketError: () => setIsConnected(false),
-        });
+        };
+        const client = activateChatSocket(callbacks);
 
         if (client.connected) {
             setIsConnected(true);
@@ -26,7 +27,7 @@ export function useChatSocket() {
         return () => {
             subscriptionsRef.current.forEach((subscription) => subscription?.unsubscribe());
             subscriptionsRef.current = [];
-            deactivateChatSocket();
+            deactivateChatSocket(callbacks);
         };
     }, []);
 

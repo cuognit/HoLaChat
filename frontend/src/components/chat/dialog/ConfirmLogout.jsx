@@ -4,6 +4,8 @@ import api from "../../../api/axiosConfig.js";
 import { AuthContext } from '../../../context/AuthContextInstance.js';
 import {ChatContext} from '../../../context/chatContextInstance.js';
 import { useContext } from "react";
+import { forceDeactivateChatSocket } from "../../../services/chatSocket.js";
+
 export default function ConfirmLogout({cancleLogout}) {
     const navigate=useNavigate();
     const { setAccessToken } = useContext(AuthContext);
@@ -11,6 +13,7 @@ export default function ConfirmLogout({cancleLogout}) {
    async function handleLogout() {
           try{
             await api.post("auth/logout",{});
+            await forceDeactivateChatSocket();
             setAccessToken(null);
             setCurrentUser(null);
             navigate("/login");
