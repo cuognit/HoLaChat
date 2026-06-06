@@ -71,6 +71,40 @@ public class MessageRestController {
         return ResponseEntity.ok(new ResponseApi<>(200, "Upload successful", urls));
     }
 
+    @PostMapping("/upload-files")
+    public ResponseEntity<ResponseApi<List<String>>> uploadFiles(
+            @RequestParam("files") MultipartFile[] files) {
+        if (files == null || files.length == 0) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseApi<>(400, "No files provided", null));
+        }
+
+        if (files.length > 10) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseApi<>(400, "Maximum 10 files allowed", null));
+        }
+
+        List<String> urls = new ArrayList<>();
+        for (MultipartFile file : files) {
+            // Giới hạn dung lượng 25MB cho File/Video
+            if (file.getSize() > 25 * 1024 * 1024) {
+                return ResponseEntity.badRequest()
+                        .body(new ResponseApi<>(400, "File " + file.getOriginalFilename() + " exceeds 25MB limit", null));
+            }
+
+            try {
+                // Cloudinary resource_type: "auto" sẽ tự phân biệt Image/Video/Raw File
+                String url = cloudinaryService.uploadFile(file, "chat-files");
+                urls.add(url);
+            } catch (IOException e) {
+                return ResponseEntity.internalServerError()
+                        .body(new ResponseApi<>(500, "Failed to upload " + file.getOriginalFilename(), null));
+            }
+        }
+
+        return ResponseEntity.ok(new ResponseApi<>(200, "Upload successful", urls));
+    }
+
     @GetMapping("/room/{roomId}/images")
     public ResponseEntity<ResponseApi<List<String>>> getImagesByRoom(
             @PathVariable Long roomId,

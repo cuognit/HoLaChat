@@ -1,4 +1,8 @@
 @import "tailwindcss";
+body {
+  /* Các font chữ hiện tại của bạn đứng trước, Noto Color Emoji đứng cuối */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif, "Noto Color Emoji";
+}
 @layer base {
   /* Tùy chỉnh thanh cuộn cho toàn bộ các phần tử có overflow */
   ::-webkit-scrollbar {
