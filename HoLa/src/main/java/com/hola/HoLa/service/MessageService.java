@@ -100,8 +100,8 @@ public class MessageService {
             throw new RuntimeException("Chat room not found");
         }
 
-        // Fetch paginated messages ordered by created_at DESC
-        Page<Message> messagePage = messageRepo.findByRoomIdOrderByCreatedAtDesc(roomId, PageRequest.of(page, size));
+        // Fetch paginated messages ordered by ID DESC
+        Page<Message> messagePage = messageRepo.findByRoomIdOrderByIdDesc(roomId, PageRequest.of(page, size));
 
         // Lấy danh sách message IDs mà user đã xóa phía mình
         Set<Long> deletedIds = Set.of();
@@ -253,7 +253,7 @@ public class MessageService {
             throw new RuntimeException("Chat room not found");
         }
 
-        Page<Message> messagePage = messageRepo.findByRoomIdAndMessageTypeOrderByCreatedAtDesc(
+        Page<Message> messagePage = messageRepo.findByRoomIdAndMessageTypeOrderByIdDesc(
                 roomId, MessageType.IMAGE, PageRequest.of(page, size));
 
         List<String> allUrls = new java.util.ArrayList<>();

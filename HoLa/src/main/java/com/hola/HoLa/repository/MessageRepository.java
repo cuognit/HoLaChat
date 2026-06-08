@@ -11,11 +11,11 @@ import java.util.Optional;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
-    List<Message> findByRoomIdOrderByCreatedAtAsc(Long roomId);
-    Optional<Message> findFirstByRoomIdOrderByCreatedAtDesc(Long roomId);
-    List<Message> findTop10ByRoomIdOrderByCreatedAtDesc(Long roomId);
-    Page<Message> findByRoomIdOrderByCreatedAtDesc(Long roomId, Pageable pageable);
+    List<Message> findByRoomIdOrderByIdAsc(Long roomId);
+    Optional<Message> findFirstByRoomIdOrderByIdDesc(Long roomId);
+    List<Message> findTop10ByRoomIdOrderByIdDesc(Long roomId);
+    Page<Message> findByRoomIdOrderByIdDesc(Long roomId, Pageable pageable);
     void deleteAllByRoomId(Long roomId);
-    Page<Message> findByRoomIdAndMessageTypeOrderByCreatedAtDesc(Long roomId, com.hola.HoLa.model.MessageType messageType, Pageable pageable);
+    Page<Message> findByRoomIdAndMessageTypeOrderByIdDesc(Long roomId, com.hola.HoLa.model.MessageType messageType, Pageable pageable);
 }
 

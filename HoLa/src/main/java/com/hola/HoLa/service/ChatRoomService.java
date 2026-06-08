@@ -301,7 +301,7 @@ public class ChatRoomService {
         }
 
         // Last message (chung cho cả group và private)
-        List<com.hola.HoLa.model.Message> latestMessages = messageRepository.findTop10ByRoomIdOrderByCreatedAtDesc(room.getId());
+        List<com.hola.HoLa.model.Message> latestMessages = messageRepository.findTop10ByRoomIdOrderByIdDesc(room.getId());
         if (!latestMessages.isEmpty()) {
             com.hola.HoLa.model.Message lastMsg = null;
             String cleanContent = null;
