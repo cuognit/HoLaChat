@@ -1,8 +1,25 @@
+export const parseApiDate = (time) => {
+  if (!time) return null;
+  if (time instanceof Date) return time;
+  if (typeof time === "number") return new Date(time);
+
+  let dateStr = String(time).trim();
+  if (/^\d+$/.test(dateStr)) {
+    return new Date(Number(dateStr));
+  }
+
+  dateStr = dateStr.replace(" ", "T");
+  if (!dateStr.endsWith("Z")) {
+    dateStr += "Z";
+  }
+  return new Date(dateStr);
+};
+
 export const formatRelativeTime = (time, prefix = "") => {
   if (!time) return "";
 
-  const date = new Date(time);
-  if (isNaN(date.getTime())) return ""; // invalid date
+  const date = parseApiDate(time);
+  if (!date || isNaN(date.getTime())) return ""; // invalid date
 
   const now = new Date();
   const diffInMs = now - date;
