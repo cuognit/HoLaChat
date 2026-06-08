@@ -22,6 +22,27 @@ public class MessageRestController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private com.hola.HoLa.service.MessageReactionService messageReactionService;
+
+    @PostMapping("/{messageId}/reactions")
+    public ResponseEntity<ResponseApi<MessageDTO>> toggleReaction(
+            @PathVariable Long messageId,
+            @RequestParam Long userId,
+            @RequestBody com.hola.HoLa.dto.MessageReactionRequest request) {
+        try {
+            MessageDTO updatedMessage = messageReactionService.toggleReaction(messageId, userId, request.getEmoji());
+            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật cảm xúc thành công", updatedMessage));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Xử lý race condition khi người dùng click quá nhanh
+            return ResponseEntity.ok(new ResponseApi<>(200, "Cập nhật cảm xúc thành công", null));
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(new ResponseApi<>(400, e.getMessage(), null));
+        }
+    }
+
     @GetMapping("/room/{roomId}")
     public ResponseEntity<ResponseApi<Map<String, Object>>> getMessagesByRoom(
             @PathVariable Long roomId,

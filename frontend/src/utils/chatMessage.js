@@ -37,5 +37,6 @@ export function normalizeIncomingMessage(message, currentUserId) {
     replyToContent: message.replyToContent,
     replyToMessageType: message.replyToMessageType,
     forwarded: message.forwarded ?? false,
+    reactions: message.reactions || [],
   };
 }

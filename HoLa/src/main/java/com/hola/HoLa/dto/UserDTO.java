@@ -2,6 +2,7 @@ package com.hola.HoLa.dto;
 
 import lombok.Data;
 import java.time.LocalDate;
+import java.time.Instant;
 
 @Data
 public class UserDTO {
@@ -13,5 +14,6 @@ public class UserDTO {
     private String gender;
     private LocalDate birthday;
     private Boolean isOnline;
+    private Instant lastActiveAt;
     private Boolean isVerified;
 }

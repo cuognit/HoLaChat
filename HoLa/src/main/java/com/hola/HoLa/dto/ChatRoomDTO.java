@@ -1,6 +1,7 @@
 package com.hola.HoLa.dto;
 
 import lombok.Data;
+import java.time.Instant;
 
 @Data
 public class ChatRoomDTO {
@@ -12,6 +13,7 @@ public class ChatRoomDTO {
     private String targetUserName;
     private String targetAvatarUrl;
     private Boolean isOnline;
+    private Instant lastActiveAt;
     private String lastMessage;
     private java.time.LocalDateTime lastMessageTime;
     private Long lastSenderId;

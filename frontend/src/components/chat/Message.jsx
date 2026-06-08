@@ -11,6 +11,10 @@ import {
 import ImageGrid from "./ImageGrid";
 import MessageActionMenu from "./MessageActionMenu";
 import MessageDetailPopup from "./MessageDetailPopup";
+import ReactionSummary from "./ReactionSummary";
+import ReactionDetailModal from "./ReactionDetailModal";
+import { useChat } from "../../hooks/useChat";
+import { toggleReaction } from "../../services/messageService";
 
 export default function Message({
   content,
@@ -41,7 +45,43 @@ export default function Message({
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [showReactionDetail, setShowReactionDetail] = useState(false);
+  const [hideReactionPicker, setHideReactionPicker] = useState(false);
+  const [animatingEmoji, setAnimatingEmoji] = useState(null);
+  const [removingEmoji, setRemovingEmoji] = useState(null);
   const moreButtonRef = useRef(null);
+  const isReactingRef = useRef(false);
+  const { currentUser } = useChat();
+
+  const handleReactionClick = async (emoji, isRemoval = false) => {
+    if (!currentUser || !messageId || isReactingRef.current) return;
+    
+    // Ẩn menu ngay lập tức
+    setHideReactionPicker(true);
+    setTimeout(() => setHideReactionPicker(false), 500);
+
+    const hasReactedWithThisEmoji = messageData?.reactions?.some(
+      (r) => r.userId === currentUser.id && r.emoji === emoji
+    );
+
+    // Bật animation
+    if (isRemoval || hasReactedWithThisEmoji) {
+      setRemovingEmoji(emoji);
+      setTimeout(() => setRemovingEmoji(null), 500);
+    } else {
+      setAnimatingEmoji(emoji);
+      setTimeout(() => setAnimatingEmoji(null), 800);
+    }
+
+    try {
+      isReactingRef.current = true;
+      await toggleReaction(messageId, currentUser.id, emoji);
+    } catch (error) {
+      console.error("Lỗi khi thả cảm xúc:", error);
+    } finally {
+      isReactingRef.current = false;
+    }
+  };
 
   // Nếu là tin nhắn hệ thống
   if (messageType === "SYSTEM") {
@@ -193,7 +233,7 @@ export default function Message({
                   : isSentByMe
                     ? "bg-blue-50 text-blue-950 border-blue-200/50 hover:bg-blue-100/60"
                     : "bg-white text-gray-800 border-gray-100 hover:bg-gray-50/70"
-              }`}
+              } ${!isRecalled && messageData?.reactions?.length > 0 ? "mb-4" : ""}`}
             >
               {messageData?.forwarded && !isRecalled && (
                 <div
@@ -375,53 +415,60 @@ export default function Message({
               )}
               {!isRecalled && (
                 <div
-                  className={`absolute -bottom-3 ${isSentByMe ? "left-0" : "right-0"} z-20 group/like opacity-0 group-hover/msg:opacity-100 transition-opacity duration-200 pointer-events-none group-hover/msg:pointer-events-auto`}
+                  className={`absolute -bottom-3 ${isSentByMe ? "left-0" : "right-0"} z-20 group/like transition-opacity duration-200 ${messageData?.reactions?.length > 0 ? "opacity-100 pointer-events-auto cursor-pointer" : "opacity-0 group-hover/msg:opacity-100 pointer-events-none group-hover/msg:pointer-events-auto"}`}
+                  onClick={() => {
+                    if (messageData?.reactions?.length > 0) {
+                      setShowReactionDetail(true);
+                    }
+                  }}
                 >
-                  <button className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-50 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer active:scale-90">
-                    <ThumbsUp className="w-3 h-3 stroke-[2.5]" />
-                  </button>
+                  {messageData?.reactions?.length > 0 ? (
+                    <ReactionSummary reactions={messageData.reactions} />
+                  ) : (
+                    <button 
+                      className="flex items-center justify-center w-5 h-5 bg-white hover:bg-gray-50 text-gray-400 hover:text-blue-500 rounded-full border border-gray-200 shadow-sm transition-all duration-150 cursor-pointer active:scale-90"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ThumbsUp className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+                  )}
+                  
+                  {/* Floating Animation Emoji */}
+                  {animatingEmoji && (
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 pointer-events-none z-50">
+                      <span className="text-4xl drop-shadow-lg inline-block animate-pop-bounce">
+                        {animatingEmoji}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Removal Animation Emoji */}
+                  {removingEmoji && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 pointer-events-none z-50">
+                      <span className="text-2xl inline-block animate-burst-fade">
+                        {removingEmoji}
+                      </span>
+                    </div>
+                  )}
+
                   <div
-                    className={`absolute bottom-full mb-0 hidden group-hover/like:flex items-center gap-2 px-2.5 py-1 bg-white border border-gray-100 rounded-full shadow-lg z-30
+                    className={`absolute bottom-full mb-0 hidden ${!hideReactionPicker ? 'group-hover/like:flex' : ''} items-center gap-2 px-2.5 py-1 bg-white border border-gray-100 rounded-full shadow-lg z-30
                          animate-in fade-in slide-in-from-bottom-1 duration-150 select-none
                          after:content-[''] after:absolute after:top-full after:h-6 after:bg-transparent
                          ${isSentByMe ? "-right-1 origin-bottom-left after:-left-4 after:right-5.5" : "-left-1 origin-bottom-right after:-right-4 after:left-5.5"}`}
                   >
-                    <span
-                      className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-                      title="Thích"
-                    >
-                      👍
-                    </span>
-                    <span
-                      className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-                      title="Yêu thích"
-                    >
-                      ❤️
-                    </span>
-                    <span
-                      className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-                      title="Haha"
-                    >
-                      😆
-                    </span>
-                    <span
-                      className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-                      title="Wow"
-                    >
-                      😮
-                    </span>
-                    <span
-                      className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-                      title="Buồn"
-                    >
-                      😭
-                    </span>
-                    <span
-                      className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-                      title="Phẫn nộ"
-                    >
-                      😡
-                    </span>
+                    {["👍", "❤️", "😆", "😮", "😢", "😡"].map((emoji, idx) => (
+                      <span
+                        key={idx}
+                        className="text-xl hover:scale-135 transition-transform duration-100 cursor-pointer origin-bottom active:scale-95 hover:filter hover:drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReactionClick(emoji);
+                        }}
+                      >
+                        {emoji}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -512,6 +559,14 @@ export default function Message({
         isOpen={showDetail}
         onClose={() => setShowDetail(false)}
         message={messageData}
+      />
+
+      <ReactionDetailModal 
+        isOpen={showReactionDetail}
+        onClose={() => setShowReactionDetail(false)}
+        reactions={messageData?.reactions}
+        currentUserId={currentUser?.id}
+        onRemoveReaction={(emoji) => handleReactionClick(emoji, true)}
       />
     </>
   );

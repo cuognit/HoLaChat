@@ -41,6 +41,9 @@ public class MessageService {
     private DeletedMessageRepository deletedMessageRepo;
 
     @Autowired
+    private com.hola.HoLa.repository.MessageReactionRepository messageReactionRepo;
+
+    @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     @Transactional
@@ -130,11 +133,16 @@ public class MessageService {
 
     @Transactional
     public MessageDTO saveSystemMessage(Long roomId, String content) {
+        return saveSystemMessageWithSender(roomId, content, null);
+    }
+
+    @Transactional
+    public MessageDTO saveSystemMessageWithSender(Long roomId, String content, User sender) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Chat room not found"));
         Message message = new Message();
         message.setRoom(room);
-        message.setSender(null); // System message không có sender
+        message.setSender(sender); // System message có thể có sender để định danh người tạo (ví dụ người thả cảm xúc)
         message.setContent(content);
         message.setMessageType(MessageType.SYSTEM);
         
@@ -220,6 +228,19 @@ public class MessageService {
         }
 
         dto.setCreatedAt(message.getCreatedAt());
+
+        // Load reactions
+        java.util.List<com.hola.HoLa.model.MessageReaction> reactions = messageReactionRepo.findByMessageId(message.getId());
+        java.util.List<com.hola.HoLa.dto.ReactionDTO> reactionDTOs = reactions.stream().map(r -> {
+            com.hola.HoLa.dto.ReactionDTO rDto = new com.hola.HoLa.dto.ReactionDTO();
+            rDto.setUserId(r.getUser().getId());
+            rDto.setUserName(r.getUser().getUserName());
+            rDto.setAvatarUrl(r.getUser().getAvatarUrl());
+            rDto.setEmoji(r.getEmoji());
+            return rDto;
+        }).collect(Collectors.toList());
+        dto.setReactions(reactionDTOs);
+
         return dto;
     }
 

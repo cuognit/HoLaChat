@@ -210,6 +210,7 @@ public class FriendshipService {
         dto.setTargetUserName(targetUser.getUserName());
         dto.setTargetAvatarUrl(targetUser.getAvatarUrl());
         dto.setIsOnline(targetUser.getIsOnline());
+        dto.setLastActiveAt(targetUser.getLastActiveAt());
         
         dto.setFriendshipStatus(friendship.getStatus().name());
         dto.setFriendshipSenderId(friendship.getSender().getId());

@@ -2,6 +2,7 @@ import { useState } from "react";
 import api from "../../api/axiosConfig";
 import { toast } from "sonner";
 import image6 from "../../assets/image6.png";
+import { useRelativeTime } from "../../hooks/useRelativeTime";
 export default function ItemUser({
   user,
   onSelect,
@@ -14,33 +15,7 @@ export default function ItemUser({
   const isOnline = user.isOnline ?? false;
   const [actionLoading, setActionLoading] = useState(false);
 
-  const formatLastMessageTime = (time) => {
-    if (!time) return "";
-
-    const date = new Date(time);
-    const now = new Date();
-
-    const isToday =
-      date.getDate() === now.getDate() &&
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear();
-
-    if (isToday) {
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } else {
-      return date.toLocaleDateString([], {
-        day: "2-digit",
-        month: "2-digit",
-      });
-    }
-  };
-
-  const lastMessageTime = user.lastMessageTime
-    ? formatLastMessageTime(user.lastMessageTime)
-    : "";
+  const lastMessageTime = useRelativeTime(user.lastMessageTime);
 
   const isGroup = user.isGroup === true;
 
@@ -212,7 +187,7 @@ export default function ItemUser({
             </p>
           ) : (
             <p
-              className={`truncate text-sm max-w-[220px] ${
+              className={`truncate text-sm max-w-[190px] ${
                 isSystemMsg
                   ? "italic text-gray-400"
                   : user.unreadCount > 0 && !isActive

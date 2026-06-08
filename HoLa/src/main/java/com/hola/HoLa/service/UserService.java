@@ -14,6 +14,7 @@ import com.hola.HoLa.security.JwtUtils;
 import com.hola.HoLa.queue.OtpQueueProducer;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -191,6 +192,7 @@ public class UserService {
         dto.setCoverUrl(userExist.getCoverUrl());
         dto.setGender(userExist.getGender());
         dto.setBirthday(userExist.getBirthday());
+        dto.setLastActiveAt(userExist.getLastActiveAt());
         
         // Check real-time status from Redis
         RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + email.toLowerCase());
@@ -210,6 +212,7 @@ public class UserService {
             dto.setCoverUrl(user.getCoverUrl());
             dto.setGender(user.getGender());
             dto.setBirthday(user.getBirthday());
+            dto.setLastActiveAt(user.getLastActiveAt());
             dto.setIsVerified(user.getIsVerified());
             
             // Get real-time status from Redis for each user
@@ -237,6 +240,7 @@ public class UserService {
                     dto.setCoverUrl(user.getCoverUrl());
                     dto.setGender(user.getGender());
                     dto.setBirthday(user.getBirthday());
+                    dto.setLastActiveAt(user.getLastActiveAt());
                     dto.setIsVerified(user.getIsVerified());
                     
                     RBucket<String> statusBucket = redissonClient.getBucket("user:status:" + user.getEmail().toLowerCase());
@@ -255,6 +259,9 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIsOnline(isOnline);
+        if (!isOnline) {
+            user.setLastActiveAt(Instant.now());
+        }
         userRepository.save(user);
     }
 
@@ -303,6 +310,7 @@ public class UserService {
         dto.setCoverUrl(user.getCoverUrl());
         dto.setGender(user.getGender());
         dto.setBirthday(user.getBirthday());
+        dto.setLastActiveAt(user.getLastActiveAt());
         dto.setIsVerified(user.getIsVerified());
         
         // Lấy trạng thái hoạt động từ Redis

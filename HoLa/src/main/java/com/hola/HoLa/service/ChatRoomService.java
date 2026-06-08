@@ -280,6 +280,7 @@ public class ChatRoomService {
                         RBucket<String> statusBucket = redissonClient.getBucket(
                                 "user:status:" + targetUser.getEmail().toLowerCase());
                         dto.setIsOnline("online".equals(statusBucket.get()));
+                        dto.setLastActiveAt(targetUser.getLastActiveAt());
 
                         friendshipRepository.findRelation(currentUserId, targetUser.getId())
                                 .ifPresentOrElse(f -> {
@@ -300,16 +301,48 @@ public class ChatRoomService {
         }
 
         // Last message (chung cho cả group và private)
-        messageRepository.findFirstByRoomIdOrderByCreatedAtDesc(room.getId())
-                .ifPresent(lastMsg -> {
-                    dto.setLastMessage(lastMsg.getContent());
-                    dto.setLastMessageTime(lastMsg.getCreatedAt());
-                    if (lastMsg.getSender() != null) {
-                        dto.setLastSenderId(lastMsg.getSender().getId());
-                        dto.setLastSenderName(lastMsg.getSender().getUserName());
+        List<com.hola.HoLa.model.Message> latestMessages = messageRepository.findTop10ByRoomIdOrderByCreatedAtDesc(room.getId());
+        if (!latestMessages.isEmpty()) {
+            com.hola.HoLa.model.Message lastMsg = null;
+            String cleanContent = null;
+            
+            for (com.hola.HoLa.model.Message msg : latestMessages) {
+                if (msg.getMessageType() == com.hola.HoLa.model.MessageType.SYSTEM && msg.getContent() != null && msg.getContent().startsWith("[REACT_FOR:")) {
+                    String content = msg.getContent();
+                    int endIndex = content.indexOf("]");
+                    if (endIndex != -1) {
+                        try {
+                            Long receiverId = Long.parseLong(content.substring(11, endIndex));
+                            if (!receiverId.equals(currentUserId)) {
+                                // Tin nhắn thả cảm xúc này không dành cho user hiện tại -> bỏ qua
+                                continue;
+                            }
+                            // Dành cho user hiện tại -> giữ lại và làm sạch prefix
+                            lastMsg = msg;
+                            cleanContent = content.substring(endIndex + 1);
+                            break;
+                        } catch (Exception e) {
+                            // Bỏ qua lỗi parse
+                        }
                     }
-                    dto.setLastMessageType(lastMsg.getMessageType() != null ? lastMsg.getMessageType().name() : null);
-                });
+                }
+                
+                // Tin nhắn bình thường hoặc hệ thống không phải thả cảm xúc -> chọn luôn
+                lastMsg = msg;
+                cleanContent = msg.getContent();
+                break;
+            }
+            
+            if (lastMsg != null) {
+                dto.setLastMessage(cleanContent);
+                dto.setLastMessageTime(lastMsg.getCreatedAt());
+                if (lastMsg.getSender() != null) {
+                    dto.setLastSenderId(lastMsg.getSender().getId());
+                    dto.setLastSenderName(lastMsg.getSender().getUserName());
+                }
+                dto.setLastMessageType(lastMsg.getMessageType() != null ? lastMsg.getMessageType().name() : null);
+            }
+        }
 
         dto.setUnreadCount(chatRedisService.getUnreadCount(currentUserId, room.getId()));
 

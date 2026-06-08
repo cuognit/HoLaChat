@@ -127,6 +127,9 @@ public class WebSocketPresenceService {
             statusUpdate.put("userId", user.getId());
             statusUpdate.put("email", email);
             statusUpdate.put("isOnline", isOnline);
+            if (user.getLastActiveAt() != null) {
+                statusUpdate.put("lastActiveAt", user.getLastActiveAt().toString());
+            }
             messagingTemplate.convertAndSend("/topic/user-status", statusUpdate);
         });
     }

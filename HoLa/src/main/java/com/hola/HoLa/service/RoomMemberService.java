@@ -272,6 +272,7 @@ public class RoomMemberService {
         } catch (Exception e) {
             dto.setIsOnline(false);
         }
+        dto.setLastActiveAt(member.getUser().getLastActiveAt());
         return dto;
     }
 }

@@ -443,7 +443,8 @@ export default function ContactDialog({ onClose, refreshKey }) {
 
                         {searchResult ? (() => {
                             // Lấy trạng thái hoạt động thời gian thực từ Context
-                            const isOnline = userStatusMap[String(searchResult.id)] ?? searchResult.isOnline ?? false;
+                            const statusObj = userStatusMap[String(searchResult.id)];
+                            const isOnline = statusObj ? statusObj.isOnline : (searchResult.isOnline ?? false);
                             return (
                                 <div className="mt-4 flex items-center gap-4.5 p-4 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-100 transition-all duration-300 shadow-2xs">
                                     {/* Avatar bo tròn kèm chấm xanh online realtime */}

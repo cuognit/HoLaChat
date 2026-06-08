@@ -33,9 +33,7 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
         ? selectedUser.avatarUrl 
         : (selectedUser.targetAvatarUrl || "/avatar.jpg");
 
-    const displayStatus = isGroup 
-        ? `${selectedUser.memberCount || 0} thành viên`
-        : (selectedUser.isOnline !== undefined ? (selectedUser.isOnline ? "Đang hoạt động" : "Không hoạt động") : "Chưa có trạng thái");
+    const statusText = isGroup ? `${selectedUser.memberCount || 0} thành viên` : "";
 
     return (
         <div className="bg-white h-18 p-4 border-b border-gray-200 flex items-center justify-between">
@@ -43,7 +41,9 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
             <div onClick={handleOpenProfile} className="flex-1 max-w-[50%]">
                 <HeaderChatUser
                     userName={displayName}
-                    status={displayStatus}
+                    isOnline={selectedUser.isOnline}
+                    lastActiveAt={selectedUser.lastActiveAt}
+                    statusText={statusText}
                     userAvatar={displayAvatar}
                     friendshipStatus={selectedUser.friendshipStatus}
                     friendshipSenderId={selectedUser.friendshipSenderId}

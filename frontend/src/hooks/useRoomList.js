@@ -56,6 +56,7 @@ export function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
         seenByUsers: Array.isArray(rawRoom?.seenByUsers) ? rawRoom.seenByUsers : [],
         unreadCount: rawRoom?.unreadCount ?? 0,
         isOnline: nestedUser?.isOnline ?? rawRoom?.isOnline ?? false,
+        lastActiveAt: nestedUser?.lastActiveAt ?? rawRoom?.lastActiveAt ?? null,
         friendshipStatus: rawRoom?.friendshipStatus ?? null,
         friendshipSenderId: rawRoom?.friendshipSenderId ?? null,
         messages: Array.isArray(rawRoom?.messages) ? rawRoom.messages : [],
@@ -148,7 +149,7 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
         const subscription = subscribe('/topic/user-status', (message) => {
             try {
                 const data = typeof message === 'string' ? JSON.parse(message) : message;
-                updateUserStatus(data.email.toLowerCase(), data.isOnline, data.userId);
+                updateUserStatus(data.email.toLowerCase(), data.isOnline, data.userId, data.lastActiveAt);
                 
                 setSelectedUser(prevSelected => {
                     if (prevSelected && (
@@ -157,7 +158,7 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
                         prevSelected.email?.toLowerCase() === data.email.toLowerCase() ||
                         prevSelected.targetUserEmail?.toLowerCase() === data.email.toLowerCase()
                     )) {
-                        return { ...prevSelected, isOnline: data.isOnline };
+                        return { ...prevSelected, isOnline: data.isOnline, lastActiveAt: data.lastActiveAt };
                     }
                     return prevSelected;
                 });
@@ -167,7 +168,7 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
                     String(user.id) === String(data.userId) ||
                     user.email?.toLowerCase() === data.email.toLowerCase() || 
                     user.targetUserEmail?.toLowerCase() === data.email.toLowerCase()
-                        ? { ...user, isOnline: data.isOnline } : user
+                        ? { ...user, isOnline: data.isOnline, lastActiveAt: data.lastActiveAt } : user
                 ));
             } catch (error) {
                 console.error('Error parsing user status message:', error);

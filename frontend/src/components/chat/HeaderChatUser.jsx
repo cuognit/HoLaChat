@@ -1,14 +1,23 @@
 import { Dot } from "lucide-react";
 import image6 from "../../assets/image6.png";
+import { useRelativeTime } from "../../hooks/useRelativeTime";
 export default function HeaderChatUser({ 
     userName, 
-    status, 
+    isOnline,
+    lastActiveAt,
     userAvatar, 
     friendshipStatus, 
     friendshipSenderId, 
     currentUserId,
-    isGroup
+    isGroup,
+    statusText // For group member count or fallback
 }) {
+    const relativeTime = useRelativeTime(lastActiveAt, "Hoạt động ");
+    
+    const displayStatus = isGroup 
+        ? statusText 
+        : (isOnline !== undefined ? (isOnline ? "Đang hoạt động" : (lastActiveAt ? relativeTime : "Không hoạt động")) : "Chưa có trạng thái");
+
     // Avatar
     const renderAvatar = () => {
         if (isGroup && !userAvatar) {
@@ -38,7 +47,7 @@ export default function HeaderChatUser({
             <div className="flex relative">
                 {renderAvatar()}
                 {!isGroup && (
-                    status === "Đang hoạt động" ? (
+                    isOnline ? (
                         <span className="absolute bottom-1 right-0 border-white border-2 w-3 h-3 bg-green-500 rounded-full"></span>
                     ) : (
                         <span className="absolute bottom-1 right-0 border-white border-2 w-3 h-3 bg-gray-400 rounded-full"></span>
@@ -69,7 +78,7 @@ export default function HeaderChatUser({
                     }
                 </div>
                 <p className="truncate text-gray-400 flex items-center text-sm">
-                    {status}
+                    {displayStatus}
                 </p>
             </div>
         </div>

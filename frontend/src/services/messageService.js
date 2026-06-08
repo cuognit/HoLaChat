@@ -70,3 +70,10 @@ export async function getMessagesByRoomFiltered(roomId, userId, page = 0, size =
     });
     return response.data?.data ?? { messages: [], hasMore: false };
 }
+
+export async function toggleReaction(messageId, userId, emoji) {
+    const response = await api.post(`/messages/${messageId}/reactions`, { emoji }, {
+        params: { userId }
+    });
+    return response.data?.data;
+}

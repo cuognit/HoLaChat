@@ -304,6 +304,24 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
     socketMessage,
     nextRoomId = socketMessage.roomId,
   ) {
+    // Lọc tin nhắn thả cảm xúc dành cho người khác
+    if (socketMessage.messageType === "SYSTEM" && socketMessage.content && socketMessage.content.startsWith("[REACT_FOR:")) {
+      const content = socketMessage.content;
+      const endIndex = content.indexOf("]");
+      if (endIndex !== -1) {
+        const receiverId = content.substring(11, endIndex);
+        if (String(receiverId) !== String(currentUserIdRef.current)) {
+          // Bỏ qua hoàn toàn tin nhắn này nếu không dành cho mình
+          return;
+        }
+        // Nếu dành cho mình, xóa prefix để UI hiển thị đẹp
+        socketMessage = {
+          ...socketMessage,
+          content: content.substring(endIndex + 1)
+        };
+      }
+    }
+
     const normalizedMessage = normalizeIncomingMessage(
       socketMessage,
       currentUserIdRef.current,
@@ -369,6 +387,20 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
     const nextSubscription = subscribe(
       `/topic/room/${roomId}`,
       (roomMessage) => {
+        if (roomMessage?.type === "MESSAGE_REACTION_UPDATE") {
+          const updatedMessage = roomMessage.data;
+          if (updatedMessage?.roomId !== roomId) return;
+          setSelectedUser((prevUser) => {
+            if (!prevUser) return prevUser;
+            const currentMessages = Array.isArray(prevUser.messages) ? prevUser.messages : [];
+            const nextMessages = currentMessages.map(msg => 
+              msg.id === updatedMessage.id ? normalizeIncomingMessage(updatedMessage, currentUserIdRef.current) : msg
+            );
+            return { ...prevUser, messages: nextMessages };
+          });
+          return;
+        }
+
         if (!roomMessage?.roomId || roomMessage.roomId !== roomId) {
           return;
         }

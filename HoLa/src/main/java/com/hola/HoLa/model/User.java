@@ -2,6 +2,7 @@ package com.hola.HoLa.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -34,6 +35,7 @@ public class User {
     private String gender;
     private LocalDate birthday;
     private Boolean isOnline = false;
+    private Instant lastActiveAt;
     private Boolean isVerified = false;
 
     @CreationTimestamp

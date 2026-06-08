@@ -152,7 +152,6 @@ export default function DisplayMessage({ onReply, onShare }) {
                     return {
                         ...prevUser,
                         messages: newMessages,
-                        lastMessage: newMessages.at(-1)?.content ?? prevUser.lastMessage,
                     };
                 });
             } catch (error) {
@@ -316,7 +315,9 @@ export default function DisplayMessage({ onReply, onShare }) {
                         <Ripple className="h-15 w-15 text-blue-400" />
                     </div>
                 ) : messages.length > 0 ? (() => {
-                    const reversedMessages = [...messages].reverse();
+                    const reversedMessages = [...messages].reverse().filter(
+                        msg => !(msg.messageType === "SYSTEM" && msg.content && msg.content.includes("đã bày tỏ cảm xúc"))
+                    );
                     return reversedMessages.map((message, index) => {
                         const previousMessage = reversedMessages[index + 1];
                         const nextMessage = reversedMessages[index - 1];

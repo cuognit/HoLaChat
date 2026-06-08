@@ -23,7 +23,8 @@ export default function MemberItem({ member, myRole, currentUserId, roomId, onRo
     }, []);
 
     // Lấy trạng thái online thời gian thực từ context, fallback về thông tin tĩnh từ database
-    const isOnline = userStatusMap[String(member.userId)] ?? member.isOnline ?? false;
+    const statusObj = userStatusMap[String(member.userId)];
+    const isOnline = statusObj ? statusObj.isOnline : (member.isOnline ?? false);
 
     return (
         <div className={`flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-xl transition-colors group relative ${

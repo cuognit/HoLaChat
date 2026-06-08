@@ -24,4 +24,6 @@ public class MessageDTO {
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
+    
+    private java.util.List<ReactionDTO> reactions;
 }

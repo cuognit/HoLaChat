@@ -6,6 +6,7 @@ export default function MessageDetailPopup({ isOpen, onClose, message }) {
     const messageTypeLabels = {
         TEXT: "Văn bản",
         IMAGE: "Hình ảnh",
+        VIDEO: "Video",
         FILE: "Tệp tin",
         SYSTEM: "Hệ thống",
     };
@@ -36,7 +37,19 @@ export default function MessageDetailPopup({ isOpen, onClose, message }) {
     };
 
     const details = [
-        { icon: <MessageSquare className="w-4 h-4 text-gray-400" />, label: "Nội dung", value: message.messageType === 'IMAGE' ? '[Hình ảnh]' : message.content },
+        { 
+            icon: <MessageSquare className="w-4 h-4 text-gray-400" />, 
+            label: "Nội dung", 
+            value: (() => {
+                if (message.messageType === 'IMAGE') return '[Hình ảnh]';
+                if (message.messageType === 'VIDEO') return '[Video]';
+                if (message.messageType === 'FILE') {
+                    try { return `[${JSON.parse(message.content).name}]`; }
+                    catch { return '[File đính kèm]'; }
+                }
+                return message.content;
+            })()
+        },
         { icon: <User className="w-4 h-4 text-gray-400" />, label: "Người gửi", value: message.senderName || "Hệ thống" },
         { icon: <Clock className="w-4 h-4 text-gray-400" />, label: "Thời gian", value: formatFullTime(message.createdAt) },
         { icon: <FileType className="w-4 h-4 text-gray-400" />, label: "Loại", value: messageTypeLabels[message.messageType] || message.messageType },
