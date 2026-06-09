@@ -10,12 +10,17 @@ import './index.css'
 import ProtectedRoute from './routes/ProtectedRoute'
 import GuestRoute from './routes/GuestRoute'
 
+import { IncomingCallBanner } from './components/IncomingCallBanner';
+import { ActiveCallWidget } from './components/ActiveCallWidget';
+
 function App() {
   
 
   return (
     <>
     <Toaster richColors position="top-right" />
+    <IncomingCallBanner />
+    <ActiveCallWidget />
       <BrowserRouter>
         <Routes>
 

@@ -91,7 +91,13 @@ export default function DisplayMessage({ onReply, onShare }) {
                         ? { ...msg, recalled: true, content: "Tin nhắn đã được thu hồi", messageType: "TEXT" }
                         : msg
                 );
-                return { ...prev, messages: updatedMessages };
+                const lastMsg = updatedMessages.at(-1);
+                return { 
+                    ...prev, 
+                    messages: updatedMessages,
+                    lastMessage: lastMsg?.content ?? prev.lastMessage,
+                    lastMessageType: lastMsg?.messageType ?? prev.lastMessageType,
+                };
             });
         });
 
@@ -258,9 +264,13 @@ export default function DisplayMessage({ onReply, onShare }) {
                     await deleteMessageForMe(message.id, currentUserId);
                     setSelectedUser(prev => {
                         if (!prev) return prev;
+                        const newMessages = (prev.messages || []).filter(m => m.id !== message.id);
+                        const lastMsg = newMessages.at(-1);
                         return {
                             ...prev,
-                            messages: (prev.messages || []).filter(m => m.id !== message.id),
+                            messages: newMessages,
+                            lastMessage: lastMsg ? lastMsg.content : "Chưa có tin nhắn",
+                            lastMessageType: lastMsg ? lastMsg.messageType : null,
                         };
                     });
                 } catch (error) {
@@ -291,7 +301,13 @@ export default function DisplayMessage({ onReply, onShare }) {
                                 ? { ...m, recalled: true, content: "Tin nhắn đã được thu hồi", messageType: "TEXT" }
                                 : m
                         );
-                        return { ...prev, messages: updatedMessages };
+                        const lastMsg = updatedMessages.at(-1);
+                        return { 
+                            ...prev, 
+                            messages: updatedMessages,
+                            lastMessage: lastMsg?.content ?? prev.lastMessage,
+                            lastMessageType: lastMsg?.messageType ?? prev.lastMessageType,
+                        };
                     });
                 } catch (error) {
                     console.error("Thu hồi tin nhắn thất bại:", error);

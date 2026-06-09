@@ -111,9 +111,10 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
                     lastMessage: selectedUser.lastMessage ?? user.lastMessage,
                     lastMessageTime: selectedUser.lastMessageTime ?? user.lastMessageTime,
                     lastSenderId: selectedUser.lastSenderId ?? user.lastSenderId,
+                    lastMessageType: selectedUser.lastMessageType ?? user.lastMessageType,
                 } : user
         ));
-    }, [selectedUser?.lastMessage, selectedUser?.lastMessageTime, selectedUser?.lastSenderId, selectedUser?.isLastMessageSeen, selectedUser?.id, selectedUser?.roomId]);
+    }, [selectedUser?.lastMessage, selectedUser?.lastMessageTime, selectedUser?.lastSenderId, selectedUser?.lastMessageType, selectedUser?.isLastMessageSeen, selectedUser?.id, selectedUser?.roomId]);
 
     // 4. Quản lý WebSocket phòng chat (Enter/Leave)
     useEffect(() => {

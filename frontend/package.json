@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@livekit/components-react": "^2.9.21",
+    "@livekit/components-styles": "^1.2.0",
     "@stomp/stompjs": "^7.3.0",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/postcss": "^4.2.2",
@@ -17,9 +19,11 @@
     "emoji-picker-react": "^4.19.1",
     "firebase": "^12.14.0",
     "jwt-decode": "^4.0.0",
+    "livekit-client": "^2.19.2",
     "lucide-react": "^1.8.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-draggable": "^4.6.0",
     "react-hook-form": "^7.72.1",
     "react-router-dom": "^7.14.0",
     "react-textarea-autosize": "^8.5.9",

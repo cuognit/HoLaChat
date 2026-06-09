@@ -22,6 +22,7 @@ public class PushNotificationService {
     /**
      * Send a notification to a specific user (to all their registered device tokens).
      */
+    @org.springframework.transaction.annotation.Transactional
     public void sendNotificationToUser(Long userId, String title, String body) {
         List<DeviceToken> tokens = deviceTokenRepository.findByUserId(userId);
         if (tokens == null || tokens.isEmpty()) {
@@ -43,8 +44,22 @@ public class PushNotificationService {
                 .build();
 
         try {
-            FirebaseMessaging.getInstance().sendEachForMulticast(message);
+            com.google.firebase.messaging.BatchResponse response = FirebaseMessaging.getInstance().sendEachForMulticast(message);
             System.out.println("Successfully sent push notification to user ID: " + userId);
+            
+            // Cleanup invalid tokens
+            if (response.getFailureCount() > 0) {
+                List<com.google.firebase.messaging.SendResponse> responses = response.getResponses();
+                for (int i = 0; i < responses.size(); i++) {
+                    if (!responses.get(i).isSuccessful()) {
+                        String errorCode = responses.get(i).getException().getMessagingErrorCode().name();
+                        if ("UNREGISTERED".equals(errorCode) || "INVALID_ARGUMENT".equals(errorCode)) {
+                            deviceTokenRepository.deleteByToken(tokenStrings.get(i));
+                            System.out.println("Deleted invalid token: " + tokenStrings.get(i));
+                        }
+                    }
+                }
+            }
         } catch (FirebaseMessagingException e) {
             System.err.println("Error sending push notification: " + e.getMessage());
             e.printStackTrace();

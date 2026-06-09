@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.hola.HoLa.repository.ChatRoomRepository;
+import com.hola.HoLa.repository.DeletedMessageRepository;
 import com.hola.HoLa.repository.RoomMemberRepository;
 import com.hola.HoLa.repository.UserRepository;
 import org.redisson.api.RBucket;
@@ -33,6 +34,9 @@ public class ChatRoomService {
 
     @Autowired
     private com.hola.HoLa.repository.MessageRepository messageRepository;
+
+    @Autowired
+    private DeletedMessageRepository deletedMessageRepository;
 
     @Autowired
     private RedissonClient redissonClient;
@@ -325,12 +329,17 @@ public class ChatRoomService {
                             // Bỏ qua lỗi parse
                         }
                     }
+                } else {
+                    // Check if message is deleted for current user
+                    if (deletedMessageRepository.existsByUserIdAndMessageId(currentUserId, msg.getId())) {
+                        continue;
+                    }
+
+                    // Tin nhắn bình thường hoặc hệ thống không phải thả cảm xúc -> chọn luôn
+                    lastMsg = msg;
+                    cleanContent = msg.getContent();
+                    break;
                 }
-                
-                // Tin nhắn bình thường hoặc hệ thống không phải thả cảm xúc -> chọn luôn
-                lastMsg = msg;
-                cleanContent = msg.getContent();
-                break;
             }
             
             if (lastMsg != null) {

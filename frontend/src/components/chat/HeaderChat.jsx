@@ -4,9 +4,12 @@ import HeaderChatUser from "./HeaderChatUser";
 import { useChat } from "../../hooks/useChat";
 import DialogWindow from "./dialog/DialogWindow";
 import FriendProfile from "./dialog/FriendProfile";
+import { initiateCall } from "../../api/callApi";
+import { useCall } from "../../context/CallContext";
 
 export default function HeaderChat({ toggleInfo, showInfo }) {
     const { selectedUser, currentUser } = useChat();
+    const { setCallingState } = useCall();
     const friendProfileRef = useRef();
 
     if (!selectedUser) {
@@ -16,12 +19,41 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
     const isGroup = selectedUser.isGroup === true;
 
     const handleOpenProfile = () => {
-        // Chỉ mở Dialog FriendProfile khi đây là phòng chat riêng (isGroup === false)
         if (!isGroup && selectedUser.targetUserId) {
             friendProfileRef.current.open();
         } else if (isGroup && !showInfo) {
-            // Nếu là nhóm, click vào avatar thì mở panel bên phải (Thông tin hội thoại)
             toggleInfo();
+        }
+    };
+
+    const handleCall = async () => {
+        if (isGroup) {
+            alert("Gọi nhóm sẽ được hỗ trợ trong tương lai.");
+            return;
+        }
+        try {
+            setCallingState({
+                otherPartyInfo: {
+                    id: selectedUser.targetUserId,
+                    userName: selectedUser.targetUserName,
+                    avatarUrl: selectedUser.targetAvatarUrl
+                }
+            });
+            const res = await initiateCall(selectedUser.targetUserId, selectedUser.roomId);
+            setCallingState({
+                sessionId: res.sessionId,
+                livekitToken: res.livekitToken, // Usually only for caller
+                roomId: selectedUser.roomId,
+                otherPartyInfo: {
+                    id: selectedUser.targetUserId,
+                    userName: selectedUser.targetUserName,
+                    avatarUrl: selectedUser.targetAvatarUrl
+                }
+            });
+        } catch (err) {
+            console.error("Initiate call error:", err);
+            setCallingState(null);
+            alert("Không thể thực hiện cuộc gọi. " + (err.response?.data?.message || err.message));
         }
     };
 
@@ -53,8 +85,8 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
             </div>
 
             <div className="flex items-center gap-4">
-                <Phone className="text-gray-400 hover:text-gray-600 cursor-pointer" />
-                <Video className="text-gray-400 hover:text-gray-600 cursor-pointer" />
+                <Phone onClick={handleCall} className="text-blue-500 hover:text-blue-700 cursor-pointer" />
+                <Video className="text-gray-400 hover:text-gray-600 cursor-pointer" title="Chưa hỗ trợ" />
                 <Search className="text-gray-400 hover:text-gray-600 cursor-pointer" />
                 <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
                 <PanelRight 

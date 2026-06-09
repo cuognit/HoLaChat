@@ -47,6 +47,7 @@ export default function MessageDetailPopup({ isOpen, onClose, message }) {
                     try { return `[${JSON.parse(message.content).name}]`; }
                     catch { return '[File đính kèm]'; }
                 }
+                if (message.messageType === 'CALL') return '[Cuộc gọi thoại]';
                 return message.content;
             })()
         },

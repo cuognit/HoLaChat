@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Search, X, Check, FileText } from "lucide-react";
+import { Search, X, Check, FileText, Phone } from "lucide-react";
 import api from "../../../api/axiosConfig";
 import { normalizeChatRoom } from "../../../hooks/useRoomList";
 import { useChat } from "../../../hooks/useChat";
@@ -282,6 +282,8 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
               />
             ) : messageData?.messageType === "FILE" ? (
               <FileText className="w-5 h-5 text-blue-500" />
+            ) : messageData?.messageType === "CALL" ? (
+              <Phone className="w-5 h-5 text-blue-500" />
             ) : (
               <span className="font-bold text-xs">
                 A<span className="lowercase">a</span>
@@ -295,24 +297,28 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
                 ? "hình ảnh"
                 : messageData?.messageType === "VIDEO"
                   ? "video"
-                  : messageData?.messageType === "FILE"
-                    ? "file đính kèm"
-                    : "tin nhắn"}
+                  : messageData?.messageType === "CALL"
+                    ? "lịch sử cuộc gọi"
+                    : messageData?.messageType === "FILE"
+                      ? "file đính kèm"
+                      : "tin nhắn"}
             </h4>
             <p className="text-xs text-gray-500 truncate mt-0.5">
               {messageData?.messageType === "IMAGE"
                 ? "[Hình ảnh]"
                 : messageData?.messageType === "VIDEO"
                   ? "[Video]"
-                  : messageData?.messageType === "FILE"
-                    ? (() => {
-                        try {
-                          return `[${JSON.parse(messageData.content).name}]`;
-                        } catch {
-                          return "[File đính kèm]";
-                        }
-                      })()
-                    : messageData?.content}
+                  : messageData?.messageType === "CALL"
+                    ? "[Cuộc gọi thoại]"
+                    : messageData?.messageType === "FILE"
+                      ? (() => {
+                          try {
+                            return `[${JSON.parse(messageData.content).name}]`;
+                          } catch {
+                            return "[File đính kèm]";
+                          }
+                        })()
+                      : messageData?.content}
             </p>
           </div>
         </div>

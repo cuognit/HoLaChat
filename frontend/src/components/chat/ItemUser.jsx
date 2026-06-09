@@ -86,6 +86,18 @@ export default function ItemUser({
           content = "📎File đính kèm";
         }
       }
+    } else if (msgType === "CALL") {
+      try {
+        const callData = JSON.parse(content);
+        const status = callData.callStatus;
+        if (status === "MISSED" || status === "REJECTED" || status === "CANCELLED") {
+          content = "📞 Cuộc gọi nhỡ";
+        } else {
+          content = "📞 Cuộc gọi thoại";
+        }
+      } catch {
+        content = "📞 Cuộc gọi thoại";
+      }
     }
 
     // System message: in nghiêng, không prefix

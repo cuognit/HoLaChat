@@ -164,6 +164,14 @@ public class MessageController {
                 "/topic/room/" + recalled.getRoomId() + "/recall",
                 recalled
             );
+
+            // Broadcast cập nhật room info (kèm lastMessage mới) tới từng member
+            List<RoomMember> members = roomMemberRepository.findByRoomId(recalled.getRoomId());
+            for (RoomMember member : members) {
+                Long memberId = member.getUser().getId();
+                ChatRoomDTO roomUpdate = chatRoomService.toDto(member.getRoom(), memberId);
+                messagingTemplate.convertAndSend("/topic/user/" + memberId + "/rooms", roomUpdate);
+            }
         } catch (RuntimeException e) {
             System.err.println("Recall failed: " + e.getMessage());
         }
