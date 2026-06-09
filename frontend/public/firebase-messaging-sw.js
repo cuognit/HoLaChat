@@ -1,18 +1,10 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDpXnX_lcJhA3porWe4aTRFKlkmMAOo4v4",
-  authDomain: "holachat-f3321.firebaseapp.com",
-  projectId: "holachat-f3321",
-  storageBucket: "holachat-f3321.firebasestorage.app",
-  messagingSenderId: "139143171293",
-  appId: "1:139143171293:web:74d1e14a07a84543579f34",
-  measurementId: "G-4779J4F80J"
-};
+importScripts('/firebase-config.js');
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase using the auto-generated config
+firebase.initializeApp(self.firebaseConfig);
 
 // Retrieve an instance of Firebase Messaging so that it can handle background messages.
 const messaging = firebase.messaging();
