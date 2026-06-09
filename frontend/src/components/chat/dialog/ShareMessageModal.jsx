@@ -309,7 +309,14 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
                 : messageData?.messageType === "VIDEO"
                   ? "[Video]"
                   : messageData?.messageType === "CALL"
-                    ? "[Cuộc gọi thoại]"
+                    ? (() => {
+                        try {
+                            const callData = JSON.parse(messageData.content);
+                            return callData.callType === 'VIDEO' ? "[Cuộc gọi video]" : "[Cuộc gọi thoại]";
+                        } catch {
+                            return "[Cuộc gọi thoại]";
+                        }
+                      })()
                     : messageData?.messageType === "FILE"
                       ? (() => {
                           try {

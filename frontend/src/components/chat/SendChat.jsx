@@ -844,7 +844,14 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
             ) : replyingToMessage.messageType === "CALL" ? (
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[13px] text-gray-500 italic">
-                  [Cuộc gọi thoại]
+                  {(() => {
+                      try {
+                          const callData = JSON.parse(replyingToMessage.content);
+                          return callData.callType === 'VIDEO' ? '[Cuộc gọi video]' : '[Cuộc gọi thoại]';
+                      } catch {
+                          return '[Cuộc gọi thoại]';
+                      }
+                  })()}
                 </span>
               </div>
             ) : (

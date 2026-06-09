@@ -12,4 +12,5 @@ public class CallResponse {
     private String livekitToken;
     private String roomName;
     private UserDTO callerInfo;
+    private String callType;
 }

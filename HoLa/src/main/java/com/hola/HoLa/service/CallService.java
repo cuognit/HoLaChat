@@ -78,6 +78,7 @@ public class CallService {
         session.setCallee(callee);
         session.setStatus(CallStatus.RINGING);
         session.setRoomName(livekitRoomName);
+        session.setCallType(request.getCallType() != null ? request.getCallType() : "AUDIO");
         
         session = callSessionRepository.save(session);
 
@@ -89,13 +90,15 @@ public class CallService {
                 .roomId(room.getId())
                 .roomName(livekitRoomName)
                 .callerInfo(mapUserToDTO(caller))
+                .callType(session.getCallType())
                 .build();
                 
         messagingTemplate.convertAndSend("/topic/user/" + callee.getId() + "/call", event);
         
         // Push notification cho cuộc gọi đến
-        String title = caller.getUserName() + " đang gọi cho bạn";
-        String body = "Nhấn để trả lời cuộc gọi thoại";
+        String callTypeName = "VIDEO".equals(session.getCallType()) ? "video" : "thoại";
+        String title = caller.getUserName() + " đang gọi " + callTypeName + " cho bạn";
+        String body = "Nhấn để trả lời cuộc gọi " + callTypeName;
         pushNotificationService.sendNotificationToUser(callee.getId(), title, body);
 
         return CallResponse.builder()
@@ -103,6 +106,7 @@ public class CallService {
                 .status(CallStatus.RINGING)
                 .livekitToken(token)
                 .roomName(livekitRoomName)
+                .callType(session.getCallType())
                 .build();
     }
 
@@ -135,6 +139,7 @@ public class CallService {
         CallEventDTO event = CallEventDTO.builder()
                 .type("CALL_ACCEPTED")
                 .sessionId(sessionId)
+                .callType(session.getCallType())
                 .build();
                 
         messagingTemplate.convertAndSend("/topic/user/" + session.getCaller().getId() + "/call", event);
@@ -145,6 +150,7 @@ public class CallService {
                 .livekitToken(calleeToken)
                 .roomName(session.getRoomName())
                 .callerInfo(mapUserToDTO(session.getCaller()))
+                .callType(session.getCallType())
                 .build();
     }
 
@@ -200,6 +206,7 @@ public class CallService {
         CallEventDTO event = CallEventDTO.builder()
                 .type(eventType)
                 .sessionId(sessionId)
+                .callType(session.getCallType())
                 .build();
                 
         messagingTemplate.convertAndSend("/topic/user/" + notifyTarget + "/call", event);
@@ -224,6 +231,7 @@ public class CallService {
                 .livekitToken(token)
                 .isCaller(isCaller)
                 .otherPartyInfo(mapUserToDTO(otherParty))
+                .callType(session.getCallType())
                 .build();
     }
 
@@ -242,6 +250,7 @@ public class CallService {
                 CallEventDTO event = CallEventDTO.builder()
                         .type("CALL_MISSED")
                         .sessionId(s.getId())
+                        .callType(s.getCallType())
                         .build();
                 messagingTemplate.convertAndSend("/topic/user/" + s.getCaller().getId() + "/call", event);
                 messagingTemplate.convertAndSend("/topic/user/" + s.getCallee().getId() + "/call", event);
@@ -250,7 +259,7 @@ public class CallService {
     }
 
     private void createCallMessage(CallSession session, String callStatus) {
-        String content = String.format("{\"callStatus\": \"%s\", \"duration\": %d}", callStatus, session.getDuration() != null ? session.getDuration() : 0);
+        String content = String.format("{\"callStatus\": \"%s\", \"duration\": %d, \"callType\": \"%s\"}", callStatus, session.getDuration() != null ? session.getDuration() : 0, session.getCallType());
         
         com.hola.HoLa.dto.PrivateMessageRequest req = new com.hola.HoLa.dto.PrivateMessageRequest();
         req.setRoomId(session.getRoom().getId());

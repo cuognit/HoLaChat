@@ -12,4 +12,5 @@ public class CallEventDTO {
     private String livekitToken;
     private String roomName;
     private UserDTO callerInfo; // for CALL_REQUEST
+    private String callType;
 }

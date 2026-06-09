@@ -40,6 +40,9 @@ public class CallSession {
     @Column(name = "room_name")
     private String roomName;
 
+    @Column(name = "call_type", nullable = false, length = 20, columnDefinition = "varchar(20) default 'AUDIO'")
+    private String callType = "AUDIO"; // AUDIO, VIDEO
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

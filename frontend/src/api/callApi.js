@@ -1,7 +1,7 @@
 import axiosInstance from "./axiosConfig";
 
-export const initiateCall = async (calleeId, roomId) => {
-    const res = await axiosInstance.post("/calls", { calleeId, roomId });
+export const initiateCall = async (calleeId, roomId, callType = "AUDIO") => {
+    const res = await axiosInstance.post("/calls", { calleeId, roomId, callType });
     return res.data;
 };
 

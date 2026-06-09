@@ -6,4 +6,5 @@ import lombok.Data;
 public class CallRequest {
     private Long calleeId;
     private Long roomId;
+    private String callType = "AUDIO";
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useCall } from "../context/CallContext";
-import { Phone, PhoneOff } from "lucide-react";
+import { Phone, PhoneOff, Video } from "lucide-react";
 
 export const IncomingCallBanner = () => {
     const { incomingCall, handleAccept, handleReject } = useCall();
@@ -23,6 +23,8 @@ export const IncomingCallBanner = () => {
     if (!incomingCall) return null;
 
     const caller = incomingCall.callerInfo;
+    const callType = incomingCall.callType || 'AUDIO';
+    const isVideo = callType === 'VIDEO';
 
     return (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.16)] p-5 flex items-center space-x-6 border-2 border-blue-100 w-[90%] max-w-sm animate-bounce-short bg-gradient-to-r from-white to-blue-50/50">
@@ -43,7 +45,7 @@ export const IncomingCallBanner = () => {
                     {caller?.userName || "Ai đó"}
                 </p>
                 <p className="text-sm font-medium text-blue-500 mt-0.5">
-                    Đang gọi thoại...
+                    {isVideo ? 'Đang gọi video...' : 'Đang gọi thoại...'}
                 </p>
             </div>
 
@@ -60,7 +62,7 @@ export const IncomingCallBanner = () => {
                     className="p-3.5 bg-green-500 text-white rounded-full hover:bg-green-600 transition-all shadow-lg hover:shadow-green-500/40 animate-pulse cursor-pointer"
                     title="Nghe"
                 >
-                    <Phone size={22} className="fill-current" />
+                    {isVideo ? <Video size={22} className="fill-current" /> : <Phone size={22} className="fill-current" />}
                 </button>
             </div>
         </div>

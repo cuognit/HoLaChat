@@ -26,24 +26,26 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
         }
     };
 
-    const handleCall = async () => {
+    const handleCall = async (type = 'AUDIO') => {
         if (isGroup) {
             alert("Gọi nhóm sẽ được hỗ trợ trong tương lai.");
             return;
         }
         try {
             setCallingState({
+                callType: type,
                 otherPartyInfo: {
                     id: selectedUser.targetUserId,
                     userName: selectedUser.targetUserName,
                     avatarUrl: selectedUser.targetAvatarUrl
                 }
             });
-            const res = await initiateCall(selectedUser.targetUserId, selectedUser.roomId);
+            const res = await initiateCall(selectedUser.targetUserId, selectedUser.roomId, type);
             setCallingState({
                 sessionId: res.sessionId,
                 livekitToken: res.livekitToken, // Usually only for caller
                 roomId: selectedUser.roomId,
+                callType: type,
                 otherPartyInfo: {
                     id: selectedUser.targetUserId,
                     userName: selectedUser.targetUserName,
@@ -85,8 +87,8 @@ export default function HeaderChat({ toggleInfo, showInfo }) {
             </div>
 
             <div className="flex items-center gap-4">
-                <Phone onClick={handleCall} className="text-blue-500 hover:text-blue-700 cursor-pointer" />
-                <Video className="text-gray-400 hover:text-gray-600 cursor-pointer" title="Chưa hỗ trợ" />
+                <Phone onClick={() => handleCall('AUDIO')} className="text-blue-500 hover:text-blue-700 cursor-pointer" />
+                <Video onClick={() => handleCall('VIDEO')} className="text-blue-500 hover:text-blue-700 cursor-pointer" />
                 <Search className="text-gray-400 hover:text-gray-600 cursor-pointer" />
                 <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
                 <PanelRight 

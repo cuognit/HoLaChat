@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import Draggable from "react-draggable";
+import { Rnd } from "react-rnd";
 import { useCall } from "../context/CallContext";
-import { LiveKitRoom, useRoomContext, useLocalParticipant, RoomAudioRenderer } from "@livekit/components-react";
-import { PhoneOff, Mic, MicOff } from "lucide-react";
+import { LiveKitRoom, useRoomContext, useLocalParticipant, RoomAudioRenderer, VideoConference } from "@livekit/components-react";
+import { PhoneOff, Mic, MicOff, Maximize2, Minimize2, Video, Minus } from "lucide-react";
 import "@livekit/components-styles";
 import { useWebAudioRingtone } from "../hooks/useWebAudioRingtone";
+import { ChatContext } from "../context/chatContextInstance";
+import { useContext } from "react";
 
 const CallControls = () => {
     const { handleEndCall } = useCall();
@@ -52,8 +54,11 @@ const CallControls = () => {
 };
 
 export const ActiveCallWidget = () => {
-    const { activeCall, callingState, handleCancelCall } = useCall();
+    const { activeCall, callingState, handleCancelCall, handleEndCall } = useCall();
+    const { currentUser } = useContext(ChatContext);
     const [duration, setDuration] = useState(0);
+    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [isMinimized, setIsMinimized] = useState(false);
     const nodeRef = useRef(null);
 
     // Kích hoạt âm thanh tút tút cho người gọi (chỉ khi đang "Calling" và chưa "Active")
@@ -67,6 +72,8 @@ export const ActiveCallWidget = () => {
             interval = setInterval(() => {
                 setDuration(prev => prev + 1);
             }, 1000);
+        } else {
+            setDuration(0);
         }
         return () => {
             if (interval) clearInterval(interval);
@@ -81,9 +88,32 @@ export const ActiveCallWidget = () => {
 
     const serverUrl = import.meta.env.VITE_LIVEKIT_URL;
 
-    // Hiển thị cho trường hợp "Đang gọi..." (Calling)
-    if (callingState && !activeCall) {
-        const caller = callingState.otherPartyInfo;
+    const currentCall = activeCall || callingState;
+    if (!currentCall) return null;
+
+    const caller = currentCall.otherPartyInfo || currentCall.callerInfo;
+    const isVideo = currentCall.callType === 'VIDEO';
+    const isCalling = callingState && !activeCall;
+
+    const customAvatarStyle = `
+        .lk-participant-tile[data-lk-identity="${currentUser?.id}"] .lk-participant-placeholder svg { display: none !important; }
+        .lk-participant-tile[data-lk-identity="${currentUser?.id}"] .lk-participant-placeholder {
+            background-image: url('${currentUser?.avatarUrl || "/avatar.jpg"}') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            border-radius: inherit;
+        }
+        .lk-participant-tile[data-lk-identity="${caller?.id}"] .lk-participant-placeholder svg { display: none !important; }
+        .lk-participant-tile[data-lk-identity="${caller?.id}"] .lk-participant-placeholder {
+            background-image: url('${caller?.avatarUrl || "/avatar.jpg"}') !important;
+            background-size: cover !important;
+            background-position: center !important;
+            border-radius: inherit;
+        }
+    `;
+
+    // Hiển thị cho trường hợp "Đang gọi..." (Calling) AUDIO
+    if (isCalling && !isVideo) {
         return (
             <div className="fixed bottom-6 right-6 z-[9998]">
                 <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-6 w-64 border-2 border-blue-50 flex flex-col items-center">
@@ -111,47 +141,151 @@ export const ActiveCallWidget = () => {
         );
     }
 
-    if (!activeCall) return null;
+    const defaultSize = isVideo ? { width: 640, height: 480 } : { width: 280, height: 360 };
+    const defaultPosition = { 
+        x: (window.innerWidth - defaultSize.width) / 2, 
+        y: (window.innerHeight - defaultSize.height) / 2 
+    };
 
-    const caller = activeCall.otherPartyInfo || activeCall.callerInfo;
+    if (isVideo) {
+        return (
+            <Rnd
+                default={{
+                    x: isFullScreen ? 0 : defaultPosition.x,
+                    y: isFullScreen ? 0 : defaultPosition.y,
+                    width: isFullScreen ? window.innerWidth : defaultSize.width,
+                    height: isFullScreen ? window.innerHeight : defaultSize.height,
+                }}
+                position={isFullScreen ? { x: 0, y: 0 } : undefined}
+                size={isFullScreen ? { width: window.innerWidth, height: window.innerHeight } : isMinimized ? { width: 300, height: 72 } : undefined}
+                disableDragging={isFullScreen}
+                enableResizing={!isFullScreen && !isMinimized}
+                minWidth={isMinimized ? 300 : 1000}
+                minHeight={isMinimized ? 72 : 400}
+                bounds="window"
+                className={`z-[9999] ${isFullScreen ? 'fixed inset-0' : 'fixed shadow-2xl rounded-2xl overflow-hidden border border-gray-200'} bg-black`}
+                dragHandleClassName="drag-header"
+            >
+                <style>{customAvatarStyle}</style>
+                <div className="w-full h-full flex flex-col relative group">
+                    {isMinimized ? (
+                        <div className="absolute inset-0 z-20 bg-gradient-to-r from-blue-600 to-blue-500 flex items-center justify-between px-4 cursor-move drag-header border border-blue-400 shadow-blue-500/30 shadow-lg" style={{ borderRadius: 'inherit' }}>
+                            <div className="flex items-center gap-3">
+                                <div className="relative pointer-events-none">
+                                    <img src={caller?.avatarUrl || "/avatar.jpg"} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-blue-300" onError={(e) => { e.target.src = "/avatar.jpg" }} />
+                                    <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-blue-600 animate-pulse"></div>
+                                </div>
+                                <div className="flex flex-col text-white cursor-auto">
+                                    <span className="font-semibold text-sm truncate max-w-[100px] drop-shadow-sm">{caller?.userName || "Video Call"}</span>
+                                    <span className="text-xs text-blue-100 font-mono drop-shadow-sm">{formatDuration(duration)}</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-2 cursor-auto">
+                                <button onClick={() => setIsMinimized(false)} className="p-2 text-white hover:text-blue-400 bg-white/10 hover:bg-white/20 transition-colors rounded-full cursor-pointer" title="Khôi phục">
+                                    <Maximize2 size={16}/>
+                                </button>
+                                <button onClick={() => { if (activeCall) handleEndCall(); else if (callingState) handleCancelCall(); }} className="p-2 bg-red-500 text-white hover:bg-red-600 transition-colors rounded-full cursor-pointer" title="Kết thúc">
+                                    <PhoneOff size={16}/>
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="drag-header flex-none w-full h-8 bg-blue-600 border-b border-blue-700 z-10 flex items-center justify-between px-4 cursor-move shadow-md">
+                            <div className="text-white font-medium flex items-center gap-2 drop-shadow-sm">
+                                <Video size={16} />
+                                <span className="text-sm truncate max-w-[200px]">{caller?.userName || "Ai đó"}</span>
+                            </div>
+                            <div className="flex items-center gap-3 cursor-auto">
+                                <div className="bg-black/20 border border-white/10 px-2 py-0.5 rounded text-blue-50 text-xs font-mono drop-shadow-sm">
+                                    {formatDuration(duration)}
+                                </div>
+                                <button 
+                                    onClick={() => setIsMinimized(true)}
+                                    className="text-white hover:text-blue-400 transition-colors cursor-pointer"
+                                    title="Thu nhỏ thành thanh nổi"
+                                >
+                                    <Minus size={20} />
+                                </button>
+                                <button 
+                                    onClick={() => setIsFullScreen(!isFullScreen)}
+                                    className="text-white hover:text-blue-400 transition-colors cursor-pointer"
+                                    title={isFullScreen ? "Thu nhỏ" : "Phóng to"}
+                                >
+                                    {isFullScreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-    return (
-        <Draggable bounds="parent" nodeRef={nodeRef}>
-            <div ref={nodeRef} className="fixed top-24 right-6 z-[9998] cursor-move">
-                <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.16)] p-6 w-[280px] border-2 border-blue-100 flex flex-col items-center bg-gradient-to-b from-white to-blue-50/30">
-                    <div className="relative mb-4 pointer-events-none">
-                        <img
-                            src={caller?.avatarUrl || "/avatar.jpg"}
-                            alt="avatar"
-                            className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white"
-                            onError={(e) => { e.target.src = "/avatar.jpg" }}
-                        />
-                        <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
-                    </div>
-                    <h3 className="font-bold text-blue-950 text-xl truncate w-full text-center pointer-events-none">
-                        {caller?.userName || "Ai đó"}
-                    </h3>
-                    <div className="bg-blue-100/50 px-4 py-1.5 rounded-full mt-2 pointer-events-none border border-blue-100">
-                        <p className="text-sm font-semibold text-blue-600 tracking-wider">
-                            {formatDuration(duration)}
-                        </p>
-                    </div>
-
-                    <div className="w-full mt-2 cursor-auto">
+                    <div className={isMinimized ? "hidden" : "w-full flex-1 relative overflow-hidden"}>
                         <LiveKitRoom
-                            video={false}
+                            video={true}
                             audio={true}
-                            token={activeCall.livekitToken}
+                            token={currentCall.livekitToken}
                             serverUrl={serverUrl}
                             connect={true}
-                            onDisconnected={() => console.log('Disconnected from LiveKit')}
+                            onDisconnected={() => {
+                                if (activeCall) handleEndCall();
+                                else if (callingState) handleCancelCall();
+                            }}
+                            className="w-full h-full"
+                            data-lk-theme="default"
                         >
+                            <VideoConference />
                             <RoomAudioRenderer />
-                            <CallControls />
                         </LiveKitRoom>
                     </div>
                 </div>
+            </Rnd>
+        );
+    }
+
+    // Giao diện AUDIO
+    return (
+        <Rnd
+            default={{
+                x: defaultPosition.x,
+                y: defaultPosition.y,
+                width: defaultSize.width,
+                height: defaultSize.height,
+            }}
+            enableResizing={false}
+            bounds="window"
+            className="z-[9998] cursor-move"
+        >
+            <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.16)] p-6 w-full h-full border-2 border-blue-100 flex flex-col items-center bg-gradient-to-b from-white to-blue-50/30">
+                <div className="relative mb-4 pointer-events-none">
+                    <img
+                        src={caller?.avatarUrl || "/avatar.jpg"}
+                        alt="avatar"
+                        className="w-24 h-24 rounded-full object-cover shadow-lg border-4 border-white"
+                        onError={(e) => { e.target.src = "/avatar.jpg" }}
+                    />
+                    <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+                </div>
+                <h3 className="font-bold text-blue-950 text-xl truncate w-full text-center pointer-events-none">
+                    {caller?.userName || "Ai đó"}
+                </h3>
+                <div className="bg-blue-100/50 px-4 py-1.5 rounded-full mt-2 pointer-events-none border border-blue-100">
+                    <p className="text-sm font-semibold text-blue-600 tracking-wider">
+                        {formatDuration(duration)}
+                    </p>
+                </div>
+
+                <div className="w-full mt-2 cursor-auto">
+                    <LiveKitRoom
+                        video={false}
+                        audio={true}
+                        token={currentCall.livekitToken}
+                        serverUrl={serverUrl}
+                        connect={true}
+                        onDisconnected={() => console.log('Disconnected from LiveKit')}
+                    >
+                        <RoomAudioRenderer />
+                        <CallControls />
+                    </LiveKitRoom>
+                </div>
             </div>
-        </Draggable>
+        </Rnd>
     );
 };

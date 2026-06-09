@@ -14,4 +14,5 @@ public class ActiveCallResponse {
     @com.fasterxml.jackson.annotation.JsonProperty("isCaller")
     private boolean isCaller;
     private UserDTO otherPartyInfo;
+    private String callType;
 }

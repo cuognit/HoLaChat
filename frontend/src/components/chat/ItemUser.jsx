@@ -90,10 +90,14 @@ export default function ItemUser({
       try {
         const callData = JSON.parse(content);
         const status = callData.callStatus;
+        const callType = callData.callType || "AUDIO";
+        const icon = callType === "VIDEO" ? "📹" : "📞";
+        const label = callType === "VIDEO" ? "Cuộc gọi video" : "Cuộc gọi thoại";
+        
         if (status === "MISSED" || status === "REJECTED" || status === "CANCELLED") {
           content = "📞 Cuộc gọi nhỡ";
         } else {
-          content = "📞 Cuộc gọi thoại";
+          content = `${icon} ${label}`;
         }
       } catch {
         content = "📞 Cuộc gọi thoại";
