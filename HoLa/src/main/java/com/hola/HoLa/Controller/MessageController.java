@@ -43,6 +43,12 @@ public class MessageController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.hola.HoLa.repository.ChatRoomRepository chatRoomRepository;
+
+    @Autowired
+    private com.hola.HoLa.service.PushNotificationService pushNotificationService;
+
     @MessageMapping("/chat")
     @SendToUser(value = "/queue/chat", broadcast = false)
     @Transactional
@@ -59,12 +65,41 @@ public class MessageController {
         List<RoomMember> members = roomMemberRepository.findByRoomId(saved.getRoomId());
         boolean anyoneSeenImmediately = false;
 
+        com.hola.HoLa.model.User sender = userRepository.findById(request.getSenderId()).orElse(null);
+        String senderName = (sender != null) ? sender.getUserName() : "Ai đó";
+        
+        com.hola.HoLa.model.ChatRoom room = chatRoomRepository.findById(saved.getRoomId()).orElse(null);
+
         for (RoomMember member : members) {
             Long memberId = member.getUser().getId();
             if (!memberId.equals(request.getSenderId())) {
                 Long activeRoomId = chatRedisService.getActiveRoom(memberId);
                 if (!saved.getRoomId().equals(activeRoomId)) {
                     chatRedisService.incrementUnread(memberId, saved.getRoomId());
+                    
+                    // Determine message content description
+                    String messageContent = saved.getContent();
+                    if ("IMAGE".equals(saved.getMessageType())) {
+                        messageContent = "[Hình ảnh]";
+                    } else if ("VIDEO".equals(saved.getMessageType())) {
+                        messageContent = "[Video]";
+                    } else if ("FILE".equals(saved.getMessageType())) {
+                        messageContent = "[Tập tin]";
+                    } else if (messageContent == null || messageContent.isEmpty()) {
+                        messageContent = "đã gửi một tin nhắn";
+                    }
+
+                    // Push notification to user who is not active in the room
+                    String title = senderName;
+                    String body = messageContent;
+                    
+                    if (room != null && Boolean.TRUE.equals(room.getIsGroup())) {
+                        title = room.getRoomName() != null ? room.getRoomName() : "Nhóm chat";
+                        body = senderName + ": " + messageContent;
+                    }
+                    
+                    pushNotificationService.sendNotificationToUser(memberId, title, body);
+                    
                 } else {
                     // Member đang active trong phòng → tự động seen ngay
                     chatRedisService.addSeenBy(saved.getRoomId(), memberId);

@@ -136,7 +136,22 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
     }, [selectedUser?.roomId, selectedUser?.id, isConnected, currentUser?.id, publish]);
 
     useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (!isConnected || !currentUser?.id || !prevSelectedRoomIdRef.current) return;
+            
+            if (document.hidden) {
+                // Người dùng chuyển sang tab khác -> Rời phòng tạm thời
+                publish("/app/room/leave", { userId: currentUser.id, roomId: prevSelectedRoomIdRef.current });
+            } else {
+                // Người dùng quay lại tab -> Vào lại phòng
+                publish("/app/room/enter", { userId: currentUser.id, roomId: prevSelectedRoomIdRef.current });
+            }
+        };
+
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
         return () => {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
             if (prevSelectedRoomIdRef.current && currentUser?.id && isConnected) {
                 publish("/app/room/leave", { userId: currentUser.id, roomId: prevSelectedRoomIdRef.current });
             }

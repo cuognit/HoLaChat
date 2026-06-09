@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContextInstance.js";
 import { setAuthToken } from "../api/axiosConfig";
 import api from "../api/axiosConfig";
+import { useFirebaseMessaging } from "../hooks/useFirebaseMessaging";
 
 export default function AuthProvider ({ children }) {
     const [accessToken, setAccessToken] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { requestPermission } = useFirebaseMessaging();
 
     // 1. Tự động lấy lại Access Token khi load trang (F5)
     useEffect(() => {
@@ -25,8 +27,15 @@ export default function AuthProvider ({ children }) {
     }, []);
 
     // 2. Cập nhật token cho axios mỗi khi state thay đổi
+    // và xin quyền push notification nếu đăng nhập thành công
     useEffect(() => {
         setAuthToken(accessToken);
+        
+        if (accessToken) {
+            // Khi có token (tức là user đã login hoặc refresh token thành công),
+            // xin quyền hiển thị thông báo
+            requestPermission();
+        }
     }, [accessToken]);
 
     return (

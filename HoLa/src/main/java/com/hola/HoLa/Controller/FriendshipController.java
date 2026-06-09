@@ -6,6 +6,7 @@ import com.hola.HoLa.dto.UserDTO;
 import com.hola.HoLa.model.User;
 import com.hola.HoLa.repository.UserRepository;
 import com.hola.HoLa.service.FriendshipService;
+import com.hola.HoLa.service.PushNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,27 +23,45 @@ public class FriendshipController {
     @Autowired
     private UserRepository userRepository;
 
-    /** Lấy ID của user đang đăng nhập từ JWT token (không tin tham số từ client) */
-    private Long getCurrentUserId() {
+    @Autowired
+    private PushNotificationService pushNotificationService;
+
+    /** Lấy user đang đăng nhập từ JWT token (không tin tham số từ client) */
+    private User getCurrentUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại!"));
-        return user.getId();
+    }
+
+    private Long getCurrentUserId() {
+        return getCurrentUser().getId();
     }
 
     @PostMapping("/request")
     public ResponseEntity<ResponseApi<ChatRoomDTO>> sendFriendRequest(
             @RequestParam Long receiverId) {
-        Long senderId = getCurrentUserId();
-        ChatRoomDTO dto = friendshipService.sendFriendRequest(senderId, receiverId);
+        User sender = getCurrentUser();
+        ChatRoomDTO dto = friendshipService.sendFriendRequest(sender.getId(), receiverId);
+        
+        // Push Notification
+        pushNotificationService.sendNotificationToUser(receiverId, 
+            "Yêu cầu kết bạn mới", 
+            sender.getUserName() + " đã gửi cho bạn một lời mời kết bạn.");
+
         return ResponseEntity.ok(new ResponseApi<>(200, "Gửi lời mời kết bạn thành công!", dto));
     }
 
     @PostMapping("/accept")
     public ResponseEntity<ResponseApi<String>> acceptFriendRequest(
             @RequestParam Long senderId) {
-        Long receiverId = getCurrentUserId();
-        friendshipService.acceptFriendRequest(receiverId, senderId);
+        User receiver = getCurrentUser();
+        friendshipService.acceptFriendRequest(receiver.getId(), senderId);
+        
+        // Push Notification (gửi cho người đã gửi lời mời ban đầu)
+        pushNotificationService.sendNotificationToUser(senderId, 
+            "Kết bạn thành công", 
+            receiver.getUserName() + " đã chấp nhận lời mời kết bạn của bạn.");
+
         return ResponseEntity.ok(new ResponseApi<>(200, "Đã đồng ý kết bạn!", "Success"));
     }
 
