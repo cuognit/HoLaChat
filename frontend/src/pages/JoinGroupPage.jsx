@@ -66,12 +66,12 @@ export default function JoinGroupPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 font-sans px-4 py-8 select-none">
             {/* Logo ở góc trên */}
-            <div className="absolute top-8 flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-                <h1 className="text-[#0068ff] font-bold text-4xl tracking-tight">HoLa</h1>
+            <div className="absolute top-4 md:top-8 flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+                <h1 className="text-[#0068ff] font-bold text-2xl md:text-4xl tracking-tight">HoLa</h1>
             </div>
 
             {/* Container chính */}
-            <div className="w-full max-w-[420px] bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 flex flex-col p-6 items-center text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-full max-w-[90vw] md:max-w-[420px] bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 flex flex-col p-4 md:p-6 items-center text-center animate-in fade-in zoom-in-95 duration-200">
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-3">
                         <Loader2 className="w-10 h-10 animate-spin text-[#0068ff]" />
@@ -114,7 +114,7 @@ export default function JoinGroupPage() {
                         </div>
 
                         {/* Group Name & Stats */}
-                        <h2 className="text-xl font-bold text-gray-900 truncate max-w-full px-2" title={roomInfo.roomName}>
+                        <h2 className="text-lg md:text-xl font-bold text-gray-900 truncate max-w-full px-2" title={roomInfo.roomName}>
                             {roomInfo.roomName}
                         </h2>
                         

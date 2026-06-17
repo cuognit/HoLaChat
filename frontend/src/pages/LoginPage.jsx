@@ -39,11 +39,11 @@ export default function LoginPage() {
     };
     return (
         <>
-            <DialogWindow ref={forgetPasswordRef} dialogForm={<ForgetPassword/>} position="m-auto rounded-2xl"/>
-           <div class="flex flex-col items-center justify-center h-screen bg-blue-100">
-            <h1 class="text-blue-500 font-bold text-5xl mb-10">HoLa</h1>
+            <DialogWindow ref={forgetPasswordRef} dialogForm={<ForgetPassword/>} position="m-auto max-w-[90vw] rounded-2xl"/>
+           <div className="flex flex-col items-center justify-center h-screen bg-blue-100">
+            <h1 className="text-blue-500 font-bold text-3xl md:text-5xl mb-10">HoLa</h1>
             {/* Form Container */}
-                <div className="w-full max-w-100 bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="w-full max-w-sm mx-4 md:mx-auto bg-white rounded-xl shadow-sm overflow-hidden">
                     
                     {/* Header */}
                     <div className="text-center py-4 border-b border-gray-100">
@@ -51,7 +51,7 @@ export default function LoginPage() {
                     </div>
 
                     {/* Form Body */}
-                    <form onSubmit={handleSubmit} className="p-8">
+                    <form onSubmit={handleSubmit} className="p-5 md:p-8">
                     
                     {/* Input Email */}
                     <div className="flex items-center gap-3 py-3 border-b border-gray-100 focus-within:border-blue-400 transition-colors ">
@@ -87,7 +87,7 @@ export default function LoginPage() {
                             type="checkbox" 
                             checked={showPassword}
                             onChange={(e) => setShowPassword(e.target.checked)}
-                            class=" cursor-pointer
+                            className=" cursor-pointer
                                 h-4 w-4 appearance-none border border-gray-300 rounded
                                 checked:bg-blue-500 checked:border-blue-500
                                 checked:bg-[url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTYgMTYiIGZpbGw9IndoaXRlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMi4yMDcgNC43OTNsLTUuNzA3IDUuNzA3LTIuNzA3LTIuNzA3LTEuNDE0IDEuNDE0IDQuMTIxIDQuMTIxIDcuMTIxLTcuMTIxeiIvPjwvc3ZnPg==')] 

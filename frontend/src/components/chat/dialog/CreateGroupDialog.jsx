@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useResponsive } from '../../../hooks/useResponsive';
 import { X, ChevronLeft, Search, Users2, Check, Camera, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig";
@@ -9,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function CreateGroupDialog({ onClose }) {
     const { currentUser } = useChat();
+    const { isMobile } = useResponsive();
     const navigate = useNavigate();
 
     // Step 1 | 2
@@ -163,7 +165,7 @@ export default function CreateGroupDialog({ onClose }) {
     const extraResults = searchResults.filter(u => !friendIds.has(u.id) && u.id !== currentUser?.id);
 
     return (
-        <div className="w-[480px] max-w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col select-none font-sans">
+        <div className={`max-w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col select-none font-sans ${isMobile ? 'w-full' : 'w-[480px]'}`}>
             {/* Header */}
             <div className="h-14 flex items-center px-4 border-b border-gray-100 shrink-0">
                 {step === 2 && (
@@ -190,7 +192,7 @@ export default function CreateGroupDialog({ onClose }) {
 
             {/* ===== BƯỚC 1 ===== */}
             {step === 1 && (
-                <div className="flex flex-col items-center px-8 py-6 gap-5">
+                <div className={`flex flex-col items-center py-6 gap-5 ${isMobile ? 'px-4' : 'px-8'}`}>
                     {/* Avatar upload */}
                     <div className="relative group cursor-pointer" onClick={() => avatarInputRef.current?.click()}>
                         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-200 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center shadow-md">
@@ -239,7 +241,7 @@ export default function CreateGroupDialog({ onClose }) {
 
             {/* ===== BƯỚC 2 ===== */}
             {step === 2 && (
-                <div className="flex flex-col h-[520px]">
+                <div className={`flex flex-col ${isMobile ? 'h-[65vh]' : 'h-[520px]'}`}>
                     {/* Search bar */}
                     <div className="px-4 pt-3 pb-2 shrink-0">
                         <div className="flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-blue-400 px-3 py-2 rounded-xl gap-2 transition-all">
@@ -324,7 +326,7 @@ export default function CreateGroupDialog({ onClose }) {
                     </div>
 
                     {/* Footer */}
-                    <div className="px-4 py-3 border-t border-gray-100 shrink-0 flex items-center justify-between gap-3">
+                    <div className={`px-4 py-3 border-t border-gray-100 shrink-0 flex gap-3 ${isMobile ? 'flex-col items-stretch' : 'items-center justify-between'}`}>
                         <span className="text-xs text-gray-500 font-medium">
                             Đã chọn <strong className="text-blue-600">{selectedMembers.length}</strong> người
                             <span className="text-gray-400"> · Tổng: {selectedMembers.length + 1} (gồm bạn)</span>

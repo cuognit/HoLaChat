@@ -146,14 +146,14 @@ const  OutInput = forwardRef( (props, ref) => {
   return (
     <dialog ref={dialogRef} className='m-auto overflow-hidden rounded-2xl transition-opacity duration-600 ease-in-out opacity-100 '> 
     <div  className="flex items-center justify-center p-4 font-sans bg-gray-100 h-full w-full">
-      <div className="w-full max-w-100 rounded-xl shadow-md p-8 text-center">
+        <div className="w-full max-w-[90vw] md:max-w-sm rounded-xl shadow-md p-5 md:p-8 text-center">
         
         <div className="w-16 h-16 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
           <ShieldCheck className="w-8 h-8" />
         </div>
         
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Xác thực OTP</h2>
-        <p className="text-sm text-gray-600 mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Xác thực OTP</h2>
+        <p className="text-xs md:text-sm text-gray-600 mb-6 md:mb-8">
           Vui lòng nhập mã 6 số đã được gửi đến <span className="font-medium text-blue-500">{props.email}</span>.
         </p>
 

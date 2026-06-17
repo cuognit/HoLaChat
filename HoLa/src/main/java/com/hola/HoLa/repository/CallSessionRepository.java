@@ -12,7 +12,9 @@ import java.util.List;
 
 public interface CallSessionRepository extends JpaRepository<CallSession, Long> {
 
-    @Query("SELECT count(c) > 0 FROM CallSession c WHERE (c.caller.id = :userId OR c.callee.id = :userId) AND c.status IN ('RINGING', 'ACTIVE')")
+    @Query("SELECT count(c) > 0 FROM CallSession c WHERE c.status IN ('RINGING', 'ACTIVE') AND (" +
+           "c.caller.id = :userId OR c.callee.id = :userId OR " +
+           "EXISTS (SELECT 1 FROM CallParticipant cp WHERE cp.callSession = c AND cp.user.id = :userId AND cp.leftAt IS NULL))")
     boolean hasActiveCall(@Param("userId") Long userId);
 
     @Modifying
@@ -26,6 +28,11 @@ public interface CallSessionRepository extends JpaRepository<CallSession, Long> 
     @Query("SELECT c FROM CallSession c WHERE c.status = 'RINGING' AND c.createdAt < :threshold")
     List<CallSession> findRingingOlderThan(@Param("threshold") Instant threshold);
     
-    @Query("SELECT c FROM CallSession c WHERE (c.caller.id = :userId OR c.callee.id = :userId) AND c.status IN ('RINGING', 'ACTIVE')")
+    @Query("SELECT c FROM CallSession c WHERE c.status IN ('RINGING', 'ACTIVE') AND (" +
+           "c.caller.id = :userId OR c.callee.id = :userId OR " +
+           "EXISTS (SELECT 1 FROM CallParticipant cp WHERE cp.callSession = c AND cp.user.id = :userId AND cp.leftAt IS NULL))")
     List<CallSession> findActiveSessionsForUser(@Param("userId") Long userId);
+
+    @Query("SELECT c FROM CallSession c WHERE c.room.id = :roomId AND c.status IN ('RINGING', 'ACTIVE') ORDER BY c.createdAt DESC")
+    List<CallSession> findActiveSessionsByRoom(@Param("roomId") Long roomId);
 }

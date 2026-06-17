@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useResponsive } from '../../../hooks/useResponsive';
 import { Search, UserPlus, MessageSquare, Check, X, Users, Loader2, MoreHorizontal, UserMinus, Info } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig";
@@ -8,6 +9,7 @@ import DialogWindow from "./DialogWindow";
 import FriendProfile from "./FriendProfile";
 export default function ContactDialog({ onClose, refreshKey }) {
     const { currentUser, setSelectedUser, userStatusMap } = useChat();
+    const { isMobile } = useResponsive();
     const [activeTab, setActiveTab] = useState("friends"); // "friends" | "add-friend"
     const navigate = useNavigate();
     
@@ -259,7 +261,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
     };
 
     return (
-        <div className="w-[450px] max-w-full bg-white text-gray-800 flex flex-col font-sans select-none rounded-2xl shadow-2xl border border-gray-200 overflow-visible relative">
+        <div className={`max-w-full bg-white text-gray-800 flex flex-col font-sans select-none rounded-2xl shadow-2xl border border-gray-200 overflow-visible relative ${isMobile ? 'w-full' : 'w-[450px]'}`}>
             
             {/* Modal Confirm Unfriend nhỏ phía trên */}
             {friendForUnfriend && (
@@ -337,7 +339,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
             </div>
 
             {/* Tab Contents */}
-            <div className="p-4 h-[350px] overflow-y-auto flex flex-col">
+            <div className={`p-4 overflow-y-auto flex flex-col ${isMobile ? 'h-[60vh]' : 'h-[350px]'}`}>
                 {activeTab === "friends" ? (
                     isLoadingFriends ? (
                         <div className="flex-1 flex items-center justify-center">
@@ -367,7 +369,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
                                         </div>
                                         <div>
                                             <h4 className="text-sm font-semibold text-gray-800">{friend.userName}</h4>
-                                            <p className="text-xs text-gray-400 truncate w-[180px]">{friend.email}</p>
+                                            <p className={`text-xs text-gray-400 truncate ${isMobile ? 'w-[120px]' : 'w-[180px]'}`}>{friend.email}</p>
                                         </div>
                                     </div>
                                     
@@ -446,7 +448,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
                             const statusObj = userStatusMap[String(searchResult.id)];
                             const isOnline = statusObj ? statusObj.isOnline : (searchResult.isOnline ?? false);
                             return (
-                                <div className="mt-4 flex items-center gap-4.5 p-4 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-100 transition-all duration-300 shadow-2xs">
+                                <div className={`mt-4 p-4 bg-gray-50/70 hover:bg-gray-50 rounded-2xl border border-gray-100 transition-all duration-300 shadow-2xs ${isMobile ? 'flex flex-col items-center gap-3 text-center' : 'flex items-center gap-4.5'}`}>
                                     {/* Avatar bo tròn kèm chấm xanh online realtime */}
                                     <div className="relative shrink-0 w-13 h-13">
                                         <img
@@ -471,7 +473,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
                                     </div>
 
                                     {/* Khu vực nút bấm hành động */}
-                                    <div className="shrink-0 flex items-center gap-2">
+                                    <div className={`shrink-0 flex items-center gap-2 ${isMobile ? 'flex-wrap justify-center' : ''}`}>
                                         {/* TRẠNG THÁI 1: CHƯA KẾT BẠN -> Thêm bạn + Nhắn tin */}
                                         {friendshipStatus === "NONE" && (
                                             <>
@@ -604,7 +606,7 @@ export default function ContactDialog({ onClose, refreshKey }) {
                     )
                 } 
                 ref={friendProfileRef} 
-                position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[400px] max-w-[90vw] shadow-2xl`} 
+                position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl ${isMobile ? 'w-[95vw] max-w-[95vw]' : 'w-[400px] max-w-[90vw]'} shadow-2xl`} 
             />
         </div>
     );

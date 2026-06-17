@@ -872,7 +872,7 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
       )}
 
       <form
-        className="flex gap-2 items-end w-full relative"
+        className="flex gap-2 items-center w-full relative"
         onSubmit={handleSubmit}
       >
         {/* Hidden file input */}
@@ -889,7 +889,7 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={!selectedUser || isUploading}
-          className="mb-3 disabled:cursor-not-allowed"
+          className="disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center"
           title="Đính kèm"
         >
           <Paperclip
@@ -912,20 +912,20 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
           }}
           onKeyDown={handleKeyDown}
           placeholder={
-            selectedUser ? "Nhập tin nhắn..." : "Hay chon mot cuoc tro chuyen"
+            selectedUser ? "Nhập tin nhắn..." : "Hãy chọn một cuộc trò chuyện"
           }
-          className="flex-1 py-3 outline-none resize-none w-full disabled:bg-white disabled:text-gray-400"
-          maxRows={7}
+          className="flex-1 py-2 md:py-3 outline-none resize-none w-full disabled:bg-white disabled:text-gray-400 text-[15px]"
+          maxRows={5}
           minRows={1}
           disabled={!selectedUser || isUploading}
         />
 
-        <div className="relative mb-1" ref={emojiPickerRef}>
+        <div className="relative flex items-center justify-center" ref={emojiPickerRef}>
           <button
             type="button"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
             disabled={!selectedUser}
-            className="disabled:cursor-not-allowed"
+            className="disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center"
           >
             <Smile
               className={
@@ -933,24 +933,28 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
                   ? "text-gray-400 hover:text-blue-600 cursor-pointer"
                   : "text-gray-300"
               }
+              size={22}
             />
           </button>
 
           {showEmojiPicker && (
-            <div className="absolute bottom-10 right-0 z-50 shadow-lg rounded-lg">
-              <EmojiPicker onEmojiClick={onEmojiClick} />
+            <div className="fixed bottom-[60px] left-0 right-0 z-50 shadow-2xl rounded-t-2xl md:rounded-lg md:absolute md:bottom-12 md:right-0 md:left-auto md:w-auto w-full bg-white md:bg-transparent">
+              <div className="w-full flex justify-center py-2 md:hidden">
+                <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+              </div>
+              <EmojiPicker onEmojiClick={onEmojiClick} width="100%" />
             </div>
           )}
         </div>
         {canSendMessage ? (
-          <button type="submit" className="mb-2.5" disabled={isUploading}>
-            <SendHorizonal className="text-gray-400 hover:text-blue-600 cursor-pointer" />
+          <button type="submit" className="flex-shrink-0 flex items-center justify-center" disabled={isUploading}>
+            <SendHorizonal className="text-gray-400 hover:text-blue-600 cursor-pointer" size={22} />
           </button>
         ) : (
           <button
             type="button"
             onClick={(e) => handleSubmit(e, true)}
-            className="mb-3 disabled:cursor-not-allowed"
+            className="disabled:cursor-not-allowed flex-shrink-0 flex items-center justify-center"
             disabled={!selectedUser || isUploading}
           >
             <ThumbsUp
@@ -959,6 +963,7 @@ export default function SendChat({ replyingToMessage, onCancelReply }) {
                   ? "text-blue-500 hover:text-blue-600 cursor-pointer"
                   : "text-gray-300"
               }
+              size={22}
             />
           </button>
         )}

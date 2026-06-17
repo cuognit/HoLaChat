@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useResponsive } from '../../../hooks/useResponsive';
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig.js";
 import { AuthContext } from '../../../context/AuthContextInstance.js';
@@ -8,6 +9,7 @@ import { forceDeactivateChatSocket } from "../../../services/chatSocket.js";
 
 export default function ConfirmLogout({cancleLogout}) {
     const navigate=useNavigate();
+    const { isMobile } = useResponsive();
     const { setAccessToken } = useContext(AuthContext);
     const { setCurrentUser } = useContext(ChatContext);
    async function handleLogout() {
@@ -25,7 +27,7 @@ export default function ConfirmLogout({cancleLogout}) {
     }
     return(
        
-            <div className="bg-white rounded-lg shadow-md p-4">
+            <div className={`bg-white rounded-lg shadow-md ${isMobile ? 'p-5 w-full' : 'p-4'}`}>
                 <h3 className="text-lg font-semibold text-center text-blue-500">Xác nhận đăng xuất</h3>
                 <p className="text-gray-600 text-center">Bạn có chắc chắn muốn đăng xuất?</p>
                 <div className="flex justify-center gap-2 mt-4">

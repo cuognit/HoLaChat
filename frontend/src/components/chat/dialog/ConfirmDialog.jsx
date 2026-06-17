@@ -1,4 +1,5 @@
 import { AlertTriangle, Trash2, LogOut, X } from 'lucide-react';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 export default function ConfirmDialog({
     isOpen,
@@ -10,6 +11,7 @@ export default function ConfirmDialog({
     cancelText = "Hủy",
     type = "danger" // "danger" | "warning" | "info"
 }) {
+    const { isMobile } = useResponsive();
     if (!isOpen) return null;
 
     // Phân loại Icon và màu sắc cho từng trường hợp
@@ -40,7 +42,7 @@ export default function ConfirmDialog({
     const theme = getTheme();
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none">
+        <div className={`fixed inset-0 z-50 flex items-center justify-center select-none ${isMobile ? 'p-3' : 'p-4'}`}>
             {/* Backdrop làm mờ tinh tế */}
             <div 
                 className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
@@ -48,7 +50,7 @@ export default function ConfirmDialog({
             />
 
             {/* Khung Dialog chính với hiệu ứng Scale nhẹ */}
-            <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-2xl transition-all border border-gray-100 animate-scale-up duration-200">
+            <div className={`relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl transition-all border border-gray-100 animate-scale-up duration-200 ${isMobile ? 'p-4' : 'p-6'}`}>
                 
                 {/* Nút đóng góc phải */}
                 <button
@@ -76,7 +78,7 @@ export default function ConfirmDialog({
                 </div>
 
                 {/* Nhóm Nút hành động */}
-                <div className="mt-6 flex justify-end gap-3">
+                <div className={`mt-6 flex gap-3 ${isMobile ? 'flex-col-reverse' : 'justify-end'}`}>
                     <button
                         onClick={onCancel}
                         className="px-4.5 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-semibold rounded-xl border border-gray-200 transition-all active:scale-[0.98] cursor-pointer"

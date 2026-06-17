@@ -30,7 +30,7 @@ public class CallSession {
     private User caller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "callee_id", nullable = false)
+    @JoinColumn(name = "callee_id", nullable = true)
     private User callee;
 
     @Enumerated(EnumType.STRING)

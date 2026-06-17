@@ -29,3 +29,13 @@ export const getActiveCall = async () => {
     const res = await axiosInstance.get("/calls/active");
     return res.data;
 };
+
+export const leaveCall = async (sessionId) => {
+    const res = await axiosInstance.post(`/calls/${sessionId}/leave`);
+    return res.data;
+};
+
+export const getActiveCallByRoom = async (roomId) => {
+    const res = await axiosInstance.get(`/calls/room/${roomId}/active`);
+    return res.data;
+};

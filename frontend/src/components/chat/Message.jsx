@@ -380,12 +380,36 @@ export default function Message({
                   } catch {
                     fileData = { name: "File đính kèm", url: content, size: 0 };
                   }
+                  const handleDownload = async (e) => {
+                    e.preventDefault();
+                    try {
+                      // Fetch file qua URL
+                      const response = await fetch(fileData.url);
+                      const blob = await response.blob();
+                      
+                      // Tạo link tạm thời để tải
+                      const blobUrl = window.URL.createObjectURL(blob);
+                      const tempLink = document.createElement('a');
+                      tempLink.href = blobUrl;
+                      tempLink.download = fileData.name || "download";
+                      document.body.appendChild(tempLink);
+                      tempLink.click();
+                      
+                      // Dọn dẹp
+                      document.body.removeChild(tempLink);
+                      window.URL.revokeObjectURL(blobUrl);
+                    } catch (error) {
+                      console.error("Lỗi tải file:", error);
+                      // Fallback: mở tab mới nếu fetch lỗi (CORS, v.v.)
+                      window.open(fileData.url, '_blank');
+                    }
+                  };
+
                   return (
                     <a
                       href={fileData.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-2 bg-white/70 rounded-lg border border-gray-200 hover:bg-white transition-colors min-w-[200px] max-w-xs shadow-sm"
+                      onClick={handleDownload}
+                      className="flex items-center gap-3 p-2 bg-white/70 rounded-lg border border-gray-200 hover:bg-white transition-colors min-w-[200px] max-w-xs shadow-sm cursor-pointer"
                     >
                       <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5" />

@@ -57,7 +57,7 @@ export const ActiveCallWidget = () => {
     const { activeCall, callingState, handleCancelCall, handleEndCall } = useCall();
     const { currentUser } = useContext(ChatContext);
     const [duration, setDuration] = useState(0);
-    const [isFullScreen, setIsFullScreen] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(window.innerWidth < 768);
     const [isMinimized, setIsMinimized] = useState(false);
     const nodeRef = useRef(null);
 
@@ -141,10 +141,13 @@ export const ActiveCallWidget = () => {
         );
     }
 
-    const defaultSize = isVideo ? { width: 640, height: 480 } : { width: 280, height: 360 };
+    const defaultSize = isVideo 
+        ? { width: Math.min(640, window.innerWidth), height: Math.min(480, window.innerHeight) } 
+        : { width: Math.min(320, window.innerWidth - 40), height: Math.min(420, window.innerHeight - 80) };
+    
     const defaultPosition = { 
-        x: (window.innerWidth - defaultSize.width) / 2, 
-        y: (window.innerHeight - defaultSize.height) / 2 
+        x: Math.max(0, (window.innerWidth - defaultSize.width) / 2), 
+        y: Math.max(0, (window.innerHeight - defaultSize.height) / 2) 
     };
 
     if (isVideo) {
@@ -157,11 +160,11 @@ export const ActiveCallWidget = () => {
                     height: isFullScreen ? window.innerHeight : defaultSize.height,
                 }}
                 position={isFullScreen ? { x: 0, y: 0 } : undefined}
-                size={isFullScreen ? { width: window.innerWidth, height: window.innerHeight } : isMinimized ? { width: 300, height: 72 } : undefined}
+                size={isFullScreen ? { width: window.innerWidth, height: window.innerHeight } : isMinimized ? { width: Math.min(300, window.innerWidth - 20), height: 72 } : undefined}
                 disableDragging={isFullScreen}
                 enableResizing={!isFullScreen && !isMinimized}
-                minWidth={isMinimized ? 300 : 1000}
-                minHeight={isMinimized ? 72 : 400}
+                minWidth={isMinimized ? Math.min(300, window.innerWidth - 20) : Math.min(320, window.innerWidth)}
+                minHeight={isMinimized ? 72 : Math.min(400, window.innerHeight)}
                 bounds="window"
                 className={`z-[9999] ${isFullScreen ? 'fixed inset-0' : 'fixed shadow-2xl rounded-2xl overflow-hidden border border-gray-200'} bg-black`}
                 dragHandleClassName="drag-header"
@@ -249,6 +252,8 @@ export const ActiveCallWidget = () => {
                 width: defaultSize.width,
                 height: defaultSize.height,
             }}
+            minWidth={Math.min(280, window.innerWidth - 40)}
+            minHeight={Math.min(360, window.innerHeight - 80)}
             enableResizing={false}
             bounds="window"
             className="z-[9998] cursor-move"

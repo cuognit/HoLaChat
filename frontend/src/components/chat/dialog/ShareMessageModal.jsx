@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useResponsive } from '../../../hooks/useResponsive';
 import { Search, X, Check, FileText, Phone } from "lucide-react";
 import api from "../../../api/axiosConfig";
 import { normalizeChatRoom } from "../../../hooks/useRoomList";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 export default function ShareMessageModal({ isOpen, onClose, messageData }) {
   const { currentUser } = useChat();
   const { publish, isConnected } = useChatSocket();
+  const { isMobile } = useResponsive();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("gần-đây"); // "gần-đây", "nhóm", "bạn-bè"
@@ -150,15 +152,15 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+    <div className={`fixed inset-0 z-[150] flex items-center justify-center ${isMobile ? 'p-2' : 'p-4'}`}>
       <div
         className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-[450px] bg-white rounded-xl shadow-2xl flex flex-col max-h-[85vh] animate-scale-up">
+      <div className={`relative w-full bg-white rounded-xl shadow-2xl flex flex-col animate-scale-up ${isMobile ? 'max-w-full max-h-[95vh]' : 'max-w-[450px] max-h-[85vh]'}`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className={`flex items-center justify-between py-4 border-b border-gray-100 ${isMobile ? 'px-4' : 'px-5'}`}>
           <h2 className="text-lg font-bold text-gray-800">Chia sẻ</h2>
           <button
             onClick={onClose}
@@ -169,7 +171,7 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
         </div>
 
         {/* Search */}
-        <div className="px-5 pt-4 pb-2">
+        <div className={`pt-4 pb-2 ${isMobile ? 'px-4' : 'px-5'}`}>
           <div className="flex items-center bg-gray-100 px-3 py-2 rounded-lg gap-2 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:bg-white border border-transparent focus-within:border-blue-500 transition-all">
             <Search className="w-4 h-4 text-gray-400" />
             <input
@@ -183,7 +185,7 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex px-5 border-b border-gray-100 gap-6 mt-2">
+        <div className={`flex border-b border-gray-100 mt-2 ${isMobile ? 'px-4 gap-3' : 'px-5 gap-6'}`}>
           <button
             onClick={() => setActiveTab("gần-đây")}
             className={`pb-3 text-sm font-semibold transition-colors relative ${activeTab === "gần-đây" ? "text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
@@ -214,7 +216,7 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 min-h-[250px]">
+        <div className={`flex-1 overflow-y-auto px-2 py-2 ${isMobile ? 'min-h-[180px]' : 'min-h-[250px]'}`}>
           {isLoading ? (
             <div className="flex justify-center py-10">
               <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -261,7 +263,7 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
         </div>
 
         {/* Preview Message & Extra Input */}
-        <div className="bg-white p-3 rounded-lg border border-gray-200 mb-3 flex gap-3 items-start shadow-sm">
+        <div className={`bg-white rounded-lg border border-gray-200 mb-3 flex gap-3 items-start shadow-sm ${isMobile ? 'p-2 mx-2' : 'p-3'}`}>
           <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center shrink-0 border border-gray-100">
             {messageData?.messageType === "IMAGE" ? (
               <img
@@ -331,7 +333,7 @@ export default function ShareMessageModal({ isOpen, onClose, messageData }) {
         </div>
 
         {/* Footer Buttons */}
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-3 bg-white rounded-b-xl">
+        <div className={`py-4 border-t border-gray-100 flex justify-end gap-3 bg-white rounded-b-xl ${isMobile ? 'px-4' : 'px-5'}`}>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"

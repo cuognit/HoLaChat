@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useResponsive } from '../../../hooks/useResponsive';
 import { Camera, Pencil, X, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useChat } from "../../../hooks/useChat";
@@ -66,6 +67,7 @@ const compressImage = (file, maxWidth, maxHeight, quality = 0.8) => {
 };
 export default function Profile({ avatarUrl, userName, email, onClose }) {
     const { currentUser, setCurrentUser } = useChat();
+    const { isMobile } = useResponsive();
     const userEmail = email || currentUser?.email || "";
 
     const [profileData, setProfileData] = useState({
@@ -247,7 +249,7 @@ export default function Profile({ avatarUrl, userName, email, onClose }) {
     };
 
     return (
-        <div className="w-[400px] max-w-full bg-white text-gray-800 flex flex-col font-sans select-none rounded-2xl shadow-2xl border border-gray-200 relative">
+        <div className={`max-w-full bg-white text-gray-800 flex flex-col font-sans select-none rounded-2xl shadow-2xl border border-gray-200 relative ${isMobile ? 'w-full' : 'w-[400px]'}`}>
             {/* Native Hidden File Inputs */}
             <input 
                 type="file" 
@@ -291,7 +293,7 @@ export default function Profile({ avatarUrl, userName, email, onClose }) {
             </div>
 
             {/* Cover and Avatar Container */}
-            <div className="relative w-full h-44 bg-white shrink-0 overflow-hidden border-b border-gray-100">
+            <div className={`relative w-full bg-white shrink-0 overflow-hidden border-b border-gray-100 ${isMobile ? 'h-36' : 'h-44'}`}>
                 {(isEditing ? tempCoverUrl : profileData.coverUrl) ? (
                     <img 
                         src={isEditing ? tempCoverUrl : profileData.coverUrl} 
@@ -334,7 +336,7 @@ export default function Profile({ avatarUrl, userName, email, onClose }) {
             </div>
 
             {/* Profile Content Body */}
-            <div className="px-6 pb-6 pt-2">
+            <div className={`pb-6 pt-2 ${isMobile ? 'px-4' : 'px-6'}`}>
                 {/* Avatar and User Name row, offset overlapping the cover image bottom */}
                 <div className="flex items-end gap-4 -mt-10 mb-5 relative z-10">
                     <div className="relative w-20 h-20">
@@ -373,13 +375,13 @@ export default function Profile({ avatarUrl, userName, email, onClose }) {
                                 type="text" 
                                 value={tempName}
                                 onChange={(e) => setTempName(e.target.value)}
-                                className="bg-white text-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500 text-lg font-semibold w-full max-w-[200px] shadow-xs"
+                                className={`bg-white text-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:border-blue-500 text-lg font-semibold w-full shadow-xs ${isMobile ? 'max-w-full' : 'max-w-[200px]'}`}
                                 placeholder="Tên hiển thị"
                                 maxLength={50}
                             />
                         ) : (
                             <>
-                                <h2 className="text-xl font-bold truncate max-w-[210px] text-gray-900" title={profileData.userName}>
+                                <h2 className={`text-xl font-bold truncate text-gray-900 ${isMobile ? 'max-w-[180px]' : 'max-w-[210px]'}`} title={profileData.userName}>
                                     {profileData.userName}
                                 </h2>
                                 <button 

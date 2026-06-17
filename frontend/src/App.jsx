@@ -24,12 +24,7 @@ function App() {
       <BrowserRouter>
         <Routes>
 
-          <Route path="/" element={ 
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>} />
-          
-          <Route path="/c/:roomId" element={ 
+          <Route path="/*" element={ 
             <ProtectedRoute>
               <HomePage />
             </ProtectedRoute>} />

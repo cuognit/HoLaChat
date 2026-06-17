@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { getActiveCall, acceptCall, rejectCall, endCall, cancelCall } from "../api/callApi";
+import { getActiveCall, acceptCall, rejectCall, endCall, cancelCall, leaveCall } from "../api/callApi";
 import { subscribeToDestination, getChatSocketClient } from "../services/chatSocket";
 import { useChat } from "../hooks/useChat";
 
@@ -150,7 +150,7 @@ export const CallProvider = ({ children }) => {
         if (!sessionId) return;
         setActiveCall(null);
         try {
-            await endCall(sessionId);
+            await leaveCall(sessionId);
         } catch (err) {
             console.error(err);
         }
@@ -172,6 +172,7 @@ export const CallProvider = ({ children }) => {
             value={{
                 incomingCall,
                 activeCall,
+                setActiveCall,
                 callingState,
                 setCallingState,
                 handleAccept,

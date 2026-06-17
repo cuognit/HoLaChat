@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useResponsive } from '../../../hooks/useResponsive';
 import { X, Search, Check, Loader2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import api from "../../../api/axiosConfig";
@@ -6,6 +7,7 @@ import { useChat } from "../../../hooks/useChat";
 
 export default function AddMemberDialog({ roomId, existingMembers = [], onClose, onAdded }) {
     const { currentUser } = useChat();
+    const { isMobile } = useResponsive();
 
     const [friends, setFriends] = useState([]);
     const [selectedMembers, setSelectedMembers] = useState([]); // [{id, userName, avatarUrl}]
@@ -112,12 +114,12 @@ export default function AddMemberDialog({ roomId, existingMembers = [], onClose,
     const extraResults = searchResults.filter(u => !friendIds.has(u.id) && u.id !== currentUser?.id);
 
     return (
-        <div className="w-[480px] max-w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col select-none font-sans">
+        <div className={`max-w-full bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col select-none font-sans ${isMobile ? 'w-full' : 'w-[480px]'}`}>
             {/* Header */}
             <div className="h-14 flex items-center px-4 border-b border-gray-100 shrink-0 justify-between">
                 <div className="flex items-center gap-2">
                     <UserPlus size={20} className="text-blue-600 animate-pulse" />
-                    <span className="text-lg font-bold text-gray-900">Thêm thành viên vào nhóm</span>
+                    <span className={`font-bold text-gray-900 ${isMobile ? 'text-base' : 'text-lg'}`}>Thêm thành viên vào nhóm</span>
                 </div>
                 <button
                     onClick={handleClose}
@@ -127,7 +129,7 @@ export default function AddMemberDialog({ roomId, existingMembers = [], onClose,
                 </button>
             </div>
 
-            <div className="flex flex-col h-[520px]">
+            <div className={`flex flex-col ${isMobile ? 'h-[65vh]' : 'h-[520px]'}`}>
                 {/* Search bar */}
                 <div className="px-4 pt-3 pb-2 shrink-0">
                     <div className="flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-blue-400 px-3 py-2 rounded-xl gap-2 transition-all shadow-xs">
@@ -215,7 +217,7 @@ export default function AddMemberDialog({ roomId, existingMembers = [], onClose,
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-3 border-t border-gray-100 shrink-0 flex items-center justify-between gap-3 bg-gray-50/50">
+                <div className={`px-4 py-3 border-t border-gray-100 shrink-0 flex gap-3 bg-gray-50/50 ${isMobile ? 'flex-col items-stretch' : 'items-center justify-between'}`}>
                     <span className="text-xs text-gray-500 font-medium">
                         Đã tích chọn: <strong className="text-blue-600 text-sm">{selectedMembers.length}</strong> người
                     </span>

@@ -1,6 +1,8 @@
 import { User, Settings, Database, Globe, HelpCircle, ChevronRight } from "lucide-react";
+import { useResponsive } from '../../../hooks/useResponsive';
 
 export default function SettingsMenu({ openProfile, openLogout, closeMenu }) {
+    const { isMobile } = useResponsive();
     
     function handleProfileClick() {
         if (closeMenu) closeMenu();       // Đóng menu lại ngay lập tức
@@ -17,7 +19,7 @@ export default function SettingsMenu({ openProfile, openLogout, closeMenu }) {
     }
 
     return (
-        <div className="w-[280px] bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200/60 py-2 flex flex-col text-slate-700 text-[14px]">
+        <div className={`bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200/60 py-2 flex flex-col text-slate-700 text-[14px] ${isMobile ? 'w-full max-w-[300px]' : 'w-[280px]'}`}>
             {/* Hàng 1: Thông tin tài khoản */}
             <div 
                 onClick={handleProfileClick} 

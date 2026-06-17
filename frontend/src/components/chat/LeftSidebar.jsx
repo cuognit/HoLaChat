@@ -17,7 +17,7 @@ import { DashRing } from "../LoadingUI";
 import { toast } from "sonner";
 import { useRoomList } from "../../hooks/useRoomList";
 
-export default function LeftSidebar({ avatarUrl, name, email }) {
+export default function LeftSidebar({ avatarUrl, name, email, isMobile = false, isTablet = false, onSelectAndNavigate }) {
  
     const menuRef = useRef();
     const settingsMenuRef = useRef(); // Khai báo tham chiếu cho menu cài đặt mới
@@ -66,6 +66,11 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
         const targetId = user?.roomId || user?.targetUserId || user?.id;
         if (targetId && String(urlRoomId) !== String(targetId)) {
             navigate(`/c/${targetId}`);
+        }
+
+        // Trên mobile, chuyển sang view chatRoom
+        if (isMobile && onSelectAndNavigate) {
+            onSelectAndNavigate();
         }
     }
 
@@ -268,9 +273,10 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                 position={`m-auto p-0 bg-transparent border-none text-gray-800 rounded-2xl w-[480px] max-w-[90vw] shadow-2xl`} 
             />
             {/* Bố cục cấu trúc chia đôi */}
-            <div className="flex w-98 bg-white p-0 border-r border-gray-200 h-screen overflow-hidden select-none">
+            <div className={`flex bg-white p-0 border-r border-gray-200 h-screen overflow-hidden select-none ${isMobile ? 'w-full' : isTablet ? 'w-[40%] min-w-[280px] max-w-[360px]' : 'w-98'}`}>
                 
-                {/* 1. THANH DỌC MÀU XANH (Left-most Blue Sidebar) */}
+                {/* 1. THANH DỌC MÀU XANH (Left-most Blue Sidebar) — Ẩn trên mobile */}
+                {!isMobile && (
                 <div className="w-14 bg-[#0068ff] flex flex-col items-center justify-between py-4 text-white flex-shrink-0 z-10 shadow-md">
                     {/* Phần trên */}
                     <div className="flex flex-col items-center w-full">
@@ -308,11 +314,22 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                         </button>
                     </div>
                 </div>
+                )}
 
                 {/* 2. KHU VỰC TÌM KIẾM & DANH SÁCH CHAT */}
                 <div className="flex-1 bg-white flex flex-col h-full overflow-hidden">
                     <div className="p-3 flex items-center gap-2">
-                        <div className="flex-1 flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-blue-500 px-2 py-1 rounded-md gap-1 transition-all">
+                        {isMobile && (
+                            <div className="relative group cursor-pointer shrink-0" onClick={handleClick}>
+                                <img
+                                    src={currentUser?.avatarUrl || avatarUrl || "/avatar.jpg"}
+                                    alt={currentUser?.userName || name}
+                                    className="w-9 h-9 rounded-full border border-gray-200 object-cover"
+                                />
+                                <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+                            </div>
+                        )}
+                        <div className="flex-1 flex items-center bg-gray-100 focus-within:bg-white border border-transparent focus-within:border-blue-500 px-2 py-1.5 rounded-md gap-1 transition-all">
                             <Search className="text-gray-400 w-4 h-4 ms-1" />
                             <input
                                 type="text"
@@ -372,7 +389,7 @@ export default function LeftSidebar({ avatarUrl, name, email }) {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-1">
+                    <div className={`flex-1 overflow-y-auto p-1 ${isMobile ? 'pb-16' : ''}`}>
                         {searchQuery.trim() ? (
                             <UnifiedSearchResults 
                                 isSearching={isSearching}

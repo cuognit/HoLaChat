@@ -7,7 +7,7 @@ import ConversationInfo from "./ConversationInfo";
 import ShareMessageModal from "./dialog/ShareMessageModal";
 import { useState, useEffect } from "react";
 
-export default function MainChat() {
+export default function MainChat({ isMobile = false, isTablet = false, onBack, onOpenInfo, showInfoFullScreen = false, onCloseInfo }) {
     const { selectedUser } = useChat();
     const [showInfo, setShowInfo] = useState(false);
 
@@ -19,18 +19,44 @@ export default function MainChat() {
         setReplyingToMessage(null);
     }, [selectedUser?.roomId]);
 
-    if (!selectedUser) {
-        return <WelcomeScreen />;
+    // Trên mobile, khi showInfoFullScreen=true → hiện ConversationInfo full screen
+    if (isMobile && showInfoFullScreen) {
+        return (
+            <div className="h-screen w-full bg-white flex flex-col mobile-slide-in-right">
+                <ConversationInfo
+                    isMobile={true}
+                    onClose={onCloseInfo}
+                />
+            </div>
+        );
     }
+
+    if (!selectedUser) {
+        return <WelcomeScreen isMobile={isMobile} />;
+    }
+
+    const handleToggleInfo = () => {
+        if (isMobile) {
+            // Trên mobile, mở ConversationInfo full screen
+            onOpenInfo?.();
+        } else {
+            setShowInfo(!showInfo);
+        }
+    };
 
     return (
         <>
             <div className="bg-white flex-1 flex flex-col h-screen justify-between w-full min-w-0">
-                <HeaderChat toggleInfo={() => setShowInfo(!showInfo)} showInfo={showInfo} />
+                <HeaderChat
+                    toggleInfo={handleToggleInfo}
+                    showInfo={showInfo}
+                    isMobile={isMobile}
+                    onBack={onBack}
+                />
                 <DisplayMessage onReply={setReplyingToMessage} onShare={setSharingMessage} />
                 <SendChat replyingToMessage={replyingToMessage} onCancelReply={() => setReplyingToMessage(null)} />
             </div>
-            {showInfo && <ConversationInfo />}
+            {!isMobile && showInfo && <ConversationInfo isTablet={isTablet} />}
             
             <ShareMessageModal 
                 isOpen={!!sharingMessage} 

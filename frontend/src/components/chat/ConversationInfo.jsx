@@ -17,6 +17,7 @@ import {
   Loader2,
   Camera,
   ImageIcon,
+  ArrowLeft,
 } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useChat } from "../../hooks/useChat";
@@ -33,7 +34,7 @@ import DialogWindow from "./dialog/DialogWindow";
 import ImageLightbox from "./ImageLightbox";
 import { getImagesByRoom } from "../../services/messageService";
 
-export default function ConversationInfo() {
+export default function ConversationInfo({ isMobile = false, isTablet = false, onClose }) {
   const { selectedUser, setSelectedUser, currentUser } = useChat();
   const { subscribe } = useChatSocket();
   const navigate = useNavigate();
@@ -392,12 +393,24 @@ export default function ConversationInfo() {
     : selectedUser.targetAvatarUrl || "/avatar.jpg";
 
   return (
-    <div className="w-[340px] shrink-0 bg-white border-l border-gray-200 h-screen flex flex-col overflow-hidden">
+    <div className={`shrink-0 bg-white border-l border-gray-200 h-screen flex flex-col overflow-hidden ${
+      isMobile ? 'w-full fixed inset-0 z-30 border-l-0' : isTablet ? 'w-[300px]' : 'w-[340px]'
+    }`}>
       {/* Header */}
-      <div className="h-14 flex items-center justify-center border-b border-gray-200 shrink-0 px-4">
-        <h2 className="text-[17px] font-semibold text-gray-800">
+      <div className="h-14 flex items-center border-b border-gray-200 shrink-0 px-4">
+        {isMobile && (
+          <button
+            onClick={onClose}
+            className="p-1.5 mr-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex-shrink-0"
+            title="Quay lại"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
+        <h2 className="text-[17px] font-semibold text-gray-800 flex-1 text-center">
           Thông tin hội thoại
         </h2>
+        {isMobile && <div className="w-9" />} {/* Spacer for centering */}
       </div>
 
       {/* Tabs — chỉ hiện với group */}

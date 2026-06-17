@@ -6,6 +6,7 @@ import com.hola.HoLa.dto.CallRequest;
 import com.hola.HoLa.dto.CallResponse;
 import com.hola.HoLa.dto.UserDTO;
 import com.hola.HoLa.model.*;
+import com.hola.HoLa.repository.CallParticipantRepository;
 import com.hola.HoLa.repository.CallSessionRepository;
 import com.hola.HoLa.repository.ChatRoomRepository;
 import com.hola.HoLa.repository.UserRepository;
@@ -26,6 +27,9 @@ public class CallService {
 
     @Autowired
     private CallSessionRepository callSessionRepository;
+
+    @Autowired
+    private CallParticipantRepository callParticipantRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -62,12 +66,8 @@ public class CallService {
         if (callSessionRepository.hasActiveCall(callerId)) {
             throw new RuntimeException("Bạn đang trong một cuộc gọi khác");
         }
-        if (callSessionRepository.hasActiveCall(request.getCalleeId())) {
-            throw new RuntimeException("Người dùng này đang bận trong một cuộc gọi khác");
-        }
         
         User caller = userRepository.findById(callerId).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
-        User callee = userRepository.findById(request.getCalleeId()).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
         ChatRoom room = chatRoomRepository.findById(request.getRoomId()).orElseThrow(() -> new RuntimeException("Phòng chat không tồn tại"));
 
         String livekitRoomName = "room_call_" + UUID.randomUUID().toString();
@@ -75,92 +75,179 @@ public class CallService {
         CallSession session = new CallSession();
         session.setRoom(room);
         session.setCaller(caller);
-        session.setCallee(callee);
-        session.setStatus(CallStatus.RINGING);
         session.setRoomName(livekitRoomName);
         session.setCallType(request.getCallType() != null ? request.getCallType() : "AUDIO");
-        
-        session = callSessionRepository.save(session);
 
-        String token = generateToken(livekitRoomName, caller.getId().toString(), caller.getUserName());
+        if (room.getIsGroup() != null && room.getIsGroup()) {
+            session.setStatus(CallStatus.ACTIVE);
+            session.setStartedAt(Instant.now());
+            session.setCallee(caller); // Bypass NOT NULL constraint in database
+            session = callSessionRepository.save(session);
+            
+            CallParticipant participant = new CallParticipant();
+            participant.setCallSession(session);
+            participant.setUser(caller);
+            participant.setJoinedAt(Instant.now());
+            callParticipantRepository.save(participant);
 
-        CallEventDTO event = CallEventDTO.builder()
-                .type("CALL_REQUEST")
-                .sessionId(session.getId())
-                .roomId(room.getId())
-                .roomName(livekitRoomName)
-                .callerInfo(mapUserToDTO(caller))
-                .callType(session.getCallType())
-                .build();
-                
-        messagingTemplate.convertAndSend("/topic/user/" + callee.getId() + "/call", event);
-        
-        // Push notification cho cuộc gọi đến
-        String callTypeName = "VIDEO".equals(session.getCallType()) ? "video" : "thoại";
-        String title = caller.getUserName() + " đang gọi " + callTypeName + " cho bạn";
-        String body = "Nhấn để trả lời cuộc gọi " + callTypeName;
-        pushNotificationService.sendNotificationToUser(callee.getId(), title, body);
+            String token = generateToken(livekitRoomName, caller.getId().toString(), caller.getUserName());
 
-        return CallResponse.builder()
-                .sessionId(session.getId())
-                .status(CallStatus.RINGING)
-                .livekitToken(token)
-                .roomName(livekitRoomName)
-                .callType(session.getCallType())
-                .build();
+            CallEventDTO event = CallEventDTO.builder()
+                    .type("CALL_REQUEST")
+                    .sessionId(session.getId())
+                    .roomId(room.getId())
+                    .roomName(livekitRoomName)
+                    .callerInfo(mapUserToDTO(caller))
+                    .callType(session.getCallType())
+                    .build();
+                    
+            List<RoomMember> members = roomMemberRepository.findByRoomId(room.getId());
+            for (RoomMember m : members) {
+                if (!m.getUser().getId().equals(callerId)) {
+                    messagingTemplate.convertAndSend("/topic/user/" + m.getUser().getId() + "/call", event);
+                    
+                    String callTypeName = "VIDEO".equals(session.getCallType()) ? "video" : "thoại";
+                    String title = caller.getUserName() + " đang gọi " + callTypeName + " nhóm";
+                    String body = "Nhấn để tham gia cuộc gọi " + callTypeName;
+                    pushNotificationService.sendNotificationToUser(m.getUser().getId(), title, body);
+                }
+            }
+
+            return CallResponse.builder()
+                    .sessionId(session.getId())
+                    .status(CallStatus.ACTIVE)
+                    .livekitToken(token)
+                    .roomName(livekitRoomName)
+                    .callType(session.getCallType())
+                    .build();
+        } else {
+            if (request.getCalleeId() == null) throw new RuntimeException("calleeId is required for 1-1 calls");
+            if (callSessionRepository.hasActiveCall(request.getCalleeId())) {
+                throw new RuntimeException("Người dùng này đang bận trong một cuộc gọi khác");
+            }
+            User callee = userRepository.findById(request.getCalleeId()).orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+            session.setCallee(callee);
+            session.setStatus(CallStatus.RINGING);
+            session = callSessionRepository.save(session);
+
+            String token = generateToken(livekitRoomName, caller.getId().toString(), caller.getUserName());
+
+            CallEventDTO event = CallEventDTO.builder()
+                    .type("CALL_REQUEST")
+                    .sessionId(session.getId())
+                    .roomId(room.getId())
+                    .roomName(livekitRoomName)
+                    .callerInfo(mapUserToDTO(caller))
+                    .callType(session.getCallType())
+                    .build();
+                    
+            messagingTemplate.convertAndSend("/topic/user/" + callee.getId() + "/call", event);
+            
+            String callTypeName = "VIDEO".equals(session.getCallType()) ? "video" : "thoại";
+            String title = caller.getUserName() + " đang gọi " + callTypeName + " cho bạn";
+            String body = "Nhấn để trả lời cuộc gọi " + callTypeName;
+            pushNotificationService.sendNotificationToUser(callee.getId(), title, body);
+
+            return CallResponse.builder()
+                    .sessionId(session.getId())
+                    .status(CallStatus.RINGING)
+                    .livekitToken(token)
+                    .roomName(livekitRoomName)
+                    .callType(session.getCallType())
+                    .build();
+        }
     }
 
     @Transactional
-    public CallResponse acceptCall(Long calleeId, Long sessionId) {
+    public CallResponse acceptCall(Long userId, Long sessionId) {
         CallSession session = callSessionRepository.findById(sessionId).orElseThrow(() -> new RuntimeException("Cuộc gọi không tồn tại"));
         
-        if (!session.getCallee().getId().equals(calleeId)) {
-            throw new RuntimeException("Không có quyền chấp nhận cuộc gọi này");
+        if (session.getRoom().getIsGroup() != null && session.getRoom().getIsGroup()) {
+            if (session.getStatus() != CallStatus.ACTIVE && session.getStatus() != CallStatus.RINGING) {
+                throw new RuntimeException("Cuộc gọi nhóm đã kết thúc");
+            }
+            User user = userRepository.findById(userId).orElseThrow();
+            
+            CallParticipant participant = callParticipantRepository.findBySessionAndUser(sessionId, userId).orElse(null);
+            if (participant == null) {
+                participant = new CallParticipant();
+                participant.setCallSession(session);
+                participant.setUser(user);
+                participant.setJoinedAt(Instant.now());
+            } else {
+                participant.setLeftAt(null);
+                participant.setJoinedAt(Instant.now());
+            }
+            callParticipantRepository.save(participant);
+
+            String token = generateToken(session.getRoomName(), user.getId().toString(), user.getUserName());
+
+            return CallResponse.builder()
+                    .sessionId(sessionId)
+                    .status(CallStatus.ACTIVE)
+                    .livekitToken(token)
+                    .roomName(session.getRoomName())
+                    .callerInfo(mapUserToDTO(session.getCaller()))
+                    .callType(session.getCallType())
+                    .build();
+        } else {
+            if (!session.getCallee().getId().equals(userId)) {
+                throw new RuntimeException("Không có quyền chấp nhận cuộc gọi này");
+            }
+
+            if (session.getStatus() != CallStatus.RINGING) {
+                throw new RuntimeException("Cuộc gọi không ở trạng thái đang đổ chuông");
+            }
+
+            if (!webSocketPresenceService.isUserOnline(session.getCaller().getEmail())) {
+                session.setStatus(CallStatus.CANCELLED);
+                callSessionRepository.save(session);
+                createCallMessage(session, "CANCELLED");
+                throw new RuntimeException("Người gọi đã ngắt kết nối");
+            }
+
+            int updated = callSessionRepository.updateStatusAndStartedAtAtomic(sessionId, CallStatus.ACTIVE, CallStatus.RINGING, Instant.now());
+            if (updated == 0) {
+                throw new RuntimeException("Cuộc gọi đã bị huỷ hoặc kết thúc");
+            }
+
+            String calleeToken = generateToken(session.getRoomName(), session.getCallee().getId().toString(), session.getCallee().getUserName());
+
+            CallEventDTO event = CallEventDTO.builder()
+                    .type("CALL_ACCEPTED")
+                    .sessionId(sessionId)
+                    .callType(session.getCallType())
+                    .build();
+                    
+            messagingTemplate.convertAndSend("/topic/user/" + session.getCaller().getId() + "/call", event);
+
+            return CallResponse.builder()
+                    .sessionId(sessionId)
+                    .status(CallStatus.ACTIVE)
+                    .livekitToken(calleeToken)
+                    .roomName(session.getRoomName())
+                    .callerInfo(mapUserToDTO(session.getCaller()))
+                    .callType(session.getCallType())
+                    .build();
         }
-
-        if (session.getStatus() != CallStatus.RINGING) {
-            throw new RuntimeException("Cuộc gọi không ở trạng thái đang đổ chuông");
-        }
-
-        if (!webSocketPresenceService.isUserOnline(session.getCaller().getEmail())) {
-            session.setStatus(CallStatus.CANCELLED);
-            callSessionRepository.save(session);
-            createCallMessage(session, "CANCELLED");
-            throw new RuntimeException("Người gọi đã ngắt kết nối");
-        }
-
-        int updated = callSessionRepository.updateStatusAndStartedAtAtomic(sessionId, CallStatus.ACTIVE, CallStatus.RINGING, Instant.now());
-        if (updated == 0) {
-            throw new RuntimeException("Cuộc gọi đã bị huỷ hoặc kết thúc");
-        }
-
-        String calleeToken = generateToken(session.getRoomName(), session.getCallee().getId().toString(), session.getCallee().getUserName());
-
-        CallEventDTO event = CallEventDTO.builder()
-                .type("CALL_ACCEPTED")
-                .sessionId(sessionId)
-                .callType(session.getCallType())
-                .build();
-                
-        messagingTemplate.convertAndSend("/topic/user/" + session.getCaller().getId() + "/call", event);
-
-        return CallResponse.builder()
-                .sessionId(sessionId)
-                .status(CallStatus.ACTIVE)
-                .livekitToken(calleeToken)
-                .roomName(session.getRoomName())
-                .callerInfo(mapUserToDTO(session.getCaller()))
-                .callType(session.getCallType())
-                .build();
     }
 
     @Transactional
     public void rejectCall(Long calleeId, Long sessionId) {
+        CallSession session = callSessionRepository.findById(sessionId).orElseThrow();
+        if (session.getRoom().getIsGroup() != null && session.getRoom().getIsGroup()) {
+            return;
+        }
         endCallSession(sessionId, CallStatus.REJECTED, calleeId, "CALL_REJECTED", false);
     }
 
     @Transactional
     public void cancelCall(Long callerId, Long sessionId) {
+        CallSession session = callSessionRepository.findById(sessionId).orElseThrow();
+        if (session.getRoom().getIsGroup() != null && session.getRoom().getIsGroup()) {
+            leaveCall(callerId, sessionId);
+            return;
+        }
         endCallSession(sessionId, CallStatus.CANCELLED, callerId, "CALL_CANCELLED", true);
     }
 
@@ -169,10 +256,28 @@ public class CallService {
         endCallSession(sessionId, CallStatus.ENDED, userId, "CALL_ENDED", null);
     }
 
+    @Transactional
+    public void leaveCall(Long userId, Long sessionId) {
+        CallSession session = callSessionRepository.findById(sessionId).orElseThrow();
+        if (session.getRoom().getIsGroup() != null && session.getRoom().getIsGroup()) {
+            CallParticipant participant = callParticipantRepository.findBySessionAndUser(sessionId, userId).orElse(null);
+            if (participant != null && participant.getLeftAt() == null) {
+                participant.setLeftAt(Instant.now());
+                callParticipantRepository.save(participant);
+            }
+            List<CallParticipant> activeParticipants = callParticipantRepository.findActiveParticipants(sessionId);
+            if (activeParticipants.isEmpty()) {
+                endCallSession(sessionId, CallStatus.ENDED, userId, "CALL_ENDED", null);
+            }
+        } else {
+            endCall(userId, sessionId);
+        }
+    }
+
     private void endCallSession(Long sessionId, CallStatus newStatus, Long actionUserId, String eventType, Boolean isCaller) {
         CallSession session = callSessionRepository.findById(sessionId).orElseThrow(() -> new RuntimeException("Cuộc gọi không tồn tại"));
         
-        if (isCaller != null) {
+        if (isCaller != null && (session.getRoom().getIsGroup() == null || !session.getRoom().getIsGroup())) {
             Long expectedId = isCaller ? session.getCaller().getId() : session.getCallee().getId();
             if (!expectedId.equals(actionUserId)) {
                 throw new RuntimeException("Không có quyền thực hiện hành động này");
@@ -201,15 +306,21 @@ public class CallService {
         
         createCallMessage(session, newStatus.name());
 
-        Long notifyTarget = session.getCaller().getId().equals(actionUserId) ? session.getCallee().getId() : session.getCaller().getId();
-        
         CallEventDTO event = CallEventDTO.builder()
                 .type(eventType)
                 .sessionId(sessionId)
                 .callType(session.getCallType())
                 .build();
-                
-        messagingTemplate.convertAndSend("/topic/user/" + notifyTarget + "/call", event);
+
+        if (session.getRoom().getIsGroup() != null && session.getRoom().getIsGroup()) {
+            List<RoomMember> members = roomMemberRepository.findByRoomId(session.getRoom().getId());
+            for (RoomMember m : members) {
+                messagingTemplate.convertAndSend("/topic/user/" + m.getUser().getId() + "/call", event);
+            }
+        } else {
+            Long notifyTarget = session.getCaller().getId().equals(actionUserId) ? session.getCallee().getId() : session.getCaller().getId();
+            messagingTemplate.convertAndSend("/topic/user/" + notifyTarget + "/call", event);
+        }
     }
 
     @Transactional
@@ -219,10 +330,10 @@ public class CallService {
         
         CallSession session = activeSessions.get(0);
         boolean isCaller = session.getCaller().getId().equals(userId);
-        User otherParty = isCaller ? session.getCallee() : session.getCaller();
+        User otherParty = (session.getRoom().getIsGroup() != null && session.getRoom().getIsGroup()) ? null : (isCaller ? session.getCallee() : session.getCaller());
         
-        String token = generateToken(session.getRoomName(), userId.toString(), 
-                isCaller ? session.getCaller().getUserName() : session.getCallee().getUserName());
+        User user = userRepository.findById(userId).orElseThrow();
+        String token = generateToken(session.getRoomName(), userId.toString(), user.getUserName());
 
         return ActiveCallResponse.builder()
                 .sessionId(session.getId())
@@ -230,7 +341,23 @@ public class CallService {
                 .roomName(session.getRoomName())
                 .livekitToken(token)
                 .isCaller(isCaller)
-                .otherPartyInfo(mapUserToDTO(otherParty))
+                .otherPartyInfo(otherParty != null ? mapUserToDTO(otherParty) : null)
+                .callType(session.getCallType())
+                .build();
+    }
+
+    @Transactional
+    public ActiveCallResponse getActiveCallByRoom(Long roomId) {
+        List<CallSession> activeSessions = callSessionRepository.findActiveSessionsByRoom(roomId);
+        if (activeSessions.isEmpty()) return null;
+        
+        CallSession session = activeSessions.get(0);
+        
+        return ActiveCallResponse.builder()
+                .sessionId(session.getId())
+                .status(session.getStatus())
+                .roomName(session.getRoomName())
+                .otherPartyInfo(mapUserToDTO(session.getCaller()))
                 .callType(session.getCallType())
                 .build();
     }

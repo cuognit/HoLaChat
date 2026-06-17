@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, matchPath } from "react-router-dom";
 import api from '../api/axiosConfig';
 import { toast } from "sonner";
 
@@ -66,22 +66,28 @@ export function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
 export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUserStatus, updateTypingUser, isConnected, subscribe, publish) {
     const [users, setUsers] = useState([]);
     const prevSelectedRoomIdRef = useRef(null);
-    const { roomId: urlRoomId } = useParams();
+    const location = useLocation();
+    const match = matchPath({ path: "/c/:roomId" }, location.pathname);
+    const urlRoomId = match ? match.params.roomId : null;
     const navigate = useNavigate();
 
     // 1. Tự động chọn phòng từ URL
     useEffect(() => {
-        if (users.length > 0 && urlRoomId) {
-            const roomToSelect = users.find(u => 
-                String(u.roomId) === String(urlRoomId) || 
-                String(u.targetUserId) === String(urlRoomId) || 
-                String(u.id) === String(urlRoomId)
-            );
-            if (roomToSelect) {
-                const isCurrentlySelected = (selectedUser?.roomId === roomToSelect.roomId && roomToSelect.roomId) || (selectedUser?.id === roomToSelect.id);
-                if (!isCurrentlySelected) {
-                    setSelectedUser(roomToSelect);
+        if (users.length > 0) {
+            if (urlRoomId) {
+                const roomToSelect = users.find(u => 
+                    String(u.roomId) === String(urlRoomId) || 
+                    String(u.targetUserId) === String(urlRoomId) || 
+                    String(u.id) === String(urlRoomId)
+                );
+                if (roomToSelect) {
+                    const isCurrentlySelected = (selectedUser?.roomId === roomToSelect.roomId && roomToSelect.roomId) || (selectedUser?.id === roomToSelect.id);
+                    if (!isCurrentlySelected) {
+                        setSelectedUser(roomToSelect);
+                    }
                 }
+            } else if (selectedUser !== null) {
+                setSelectedUser(null);
             }
         }
     }, [users, urlRoomId, selectedUser, setSelectedUser]);

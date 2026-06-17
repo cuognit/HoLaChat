@@ -61,6 +61,22 @@ public class CallController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{sessionId}/leave")
+    public ResponseEntity<Void> leaveCall(@PathVariable Long sessionId) {
+        User user = getCurrentUser();
+        callService.leaveCall(user.getId(), sessionId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/room/{roomId}/active")
+    public ResponseEntity<ActiveCallResponse> getActiveCallByRoom(@PathVariable Long roomId) {
+        ActiveCallResponse response = callService.getActiveCallByRoom(roomId);
+        if (response != null) {
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/active")
     public ResponseEntity<ActiveCallResponse> getActiveCall() {
         User user = getCurrentUser();

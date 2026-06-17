@@ -102,11 +102,11 @@ export default function ForgetPassword () {
   return (
    
         
-          <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transition-all transform animate-in fade-in zoom-in duration-300">
+          <div className="relative bg-white w-full max-w-[90vw] md:max-w-md rounded-2xl shadow-2xl overflow-hidden transition-all transform animate-in fade-in zoom-in duration-300">
             
             {/* Header */}
-            <div className="p-6 border-b border-slate-100 flex justify-center items-center bg-slate-50/50">
-              <h2 className="text-xl font-bold text-slate-800">
+            <div className="p-4 md:p-6 border-b border-slate-100 flex justify-center items-center bg-slate-50/50">
+              <h2 className="text-lg md:text-xl font-bold text-slate-800">
                 {step === 1 && "Khôi phục mật khẩu"}
                 {step === 2 && "Xác thực mã OTP"}
                 {step === 3 && "Thiết lập mật khẩu mới"}
@@ -116,18 +116,18 @@ export default function ForgetPassword () {
             </div>
 
             {/* Body */}
-            <div className="p-8">
+            <div className="p-5 md:p-8">
               {/* Progress Indicator */}
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-6 md:mb-8">
                 {[1, 2, 3].map((s) => (
                   <div key={s} className="flex items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                    <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold transition-colors ${
                       step >= s ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-500'
                     }`}>
                       {step > s ? <CheckCircle2 className="w-5 h-5" /> : s}
                     </div>
                     {s < 3 && (
-                      <div className={`w-12 h-1 mx-2 rounded transition-colors ${
+                      <div className={`w-8 md:w-12 h-1 mx-1 md:mx-2 rounded transition-colors ${
                         step > s ? 'bg-blue-600' : 'bg-slate-200'
                       }`}></div>
                     )}
@@ -172,13 +172,13 @@ export default function ForgetPassword () {
                         Mã OTP đã được gửi đến <span className="font-semibold text-blue-600">{email}</span>. Vui lòng kiểm tra hộp thư.
                       </p>
                     </div>
-                    <div className="flex justify-between gap-2">
+                    <div className="flex justify-between gap-1.5 md:gap-2">
                       {otp.map((data, index) => (
                         <input
                           key={index}
                           type="text"
                           maxLength="1"
-                          className="w-12 h-14 text-center text-xl font-bold bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                          className="w-10 h-12 md:w-12 md:h-14 text-center text-lg md:text-xl font-bold bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                           value={data}
                           onChange={(e) => handleOtpChange(e.target, index)}
                           onFocus={(e) => e.target.select()}
@@ -251,7 +251,7 @@ export default function ForgetPassword () {
                       <CheckCircle2 className="w-12 h-12 text-emerald-600" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-2xl font-bold text-slate-800">Thành công!</h3>
+                      <h3 className="text-xl md:text-2xl font-bold text-slate-800">Thành công!</h3>
                       <p className="text-slate-600">
                         Mật khẩu của bạn đã được thay đổi thành công. Bây giờ bạn có thể đăng nhập bằng mật khẩu mới.
                       </p>

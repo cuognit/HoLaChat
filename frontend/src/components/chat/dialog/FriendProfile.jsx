@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useResponsive } from '../../../hooks/useResponsive';
 import {
   X,
   UserMinus,
@@ -22,6 +23,7 @@ export default function FriendProfile({
   externalFriendshipSenderId,
 }) {
   const { currentUser } = useChat();
+  const { isMobile } = useResponsive();
   const [userData, setUserData] = useState(initialUserData || null);
   const [isLoading, setIsLoading] = useState(!initialUserData);
   const [friendshipStatus, setFriendshipStatus] = useState("NONE"); // "NONE" | "SENT_PENDING" | "RECEIVED_PENDING" | "ACCEPTED"
@@ -242,7 +244,7 @@ export default function FriendProfile({
 
   if (isLoading) {
     return (
-      <div className="w-[400px] h-[350px] bg-white rounded-2xl flex items-center justify-center">
+      <div className={`h-[350px] bg-white rounded-2xl flex items-center justify-center ${isMobile ? 'w-full' : 'w-[400px]'}`}>
         <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
       </div>
     );
@@ -251,7 +253,7 @@ export default function FriendProfile({
   if (!userData) return null;
 
   return (
-    <div className="w-[400px] max-w-full bg-white text-gray-800 flex flex-col font-sans select-none rounded-2xl shadow-2xl border border-gray-200 relative overflow-hidden">
+    <div className={`max-w-full bg-white text-gray-800 flex flex-col font-sans select-none rounded-2xl shadow-2xl border border-gray-200 relative overflow-hidden ${isMobile ? 'w-full' : 'w-[400px]'}`}>
       {/* Popup xác nhận hủy kết bạn */}
       {isUnfriendConfirm && (
         <div className="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
@@ -307,7 +309,7 @@ export default function FriendProfile({
       </div>
 
       {/* Cover Image */}
-      <div className="relative w-full h-44 bg-gray-100 shrink-0 overflow-hidden border-b border-gray-100">
+      <div className={`relative w-full bg-gray-100 shrink-0 overflow-hidden border-b border-gray-100 ${isMobile ? 'h-36' : 'h-44'}`}>
         {userData.coverUrl ? (
           <img
             src={userData.coverUrl}
@@ -320,7 +322,7 @@ export default function FriendProfile({
       </div>
 
       {/* Content Body */}
-      <div className="px-6 pb-6 pt-2">
+      <div className={`pb-6 pt-2 ${isMobile ? 'px-4' : 'px-6'}`}>
         {/* Avatar and User Name row */}
         <div className="flex items-end gap-4 -mt-10 mb-5 relative z-10">
           <div className="relative w-20 h-20">
@@ -335,7 +337,7 @@ export default function FriendProfile({
           </div>
           <div className="flex-1 pb-1">
             <h2
-              className="text-xl font-bold truncate max-w-[210px] text-gray-900"
+              className={`text-xl font-bold truncate text-gray-900 ${isMobile ? 'max-w-[180px]' : 'max-w-[210px]'}`}
               title={userData.userName}
             >
               {userData.userName}
