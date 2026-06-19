@@ -16,6 +16,9 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.stereotype.Component;
 
 @Component
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: WebSocketAuthChannelInterceptor.
+ */
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
     @Autowired
     private JwtUtils jwtUtils;

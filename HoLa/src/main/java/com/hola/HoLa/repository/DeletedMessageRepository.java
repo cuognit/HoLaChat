@@ -9,6 +9,10 @@ import java.util.Collection;
 import java.util.Set;
 
 @Repository
+/**
+ * Lớp Repository cho DeletedMessageRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface DeletedMessageRepository extends JpaRepository<DeletedMessage, Long> {
     boolean existsByUserIdAndMessageId(Long userId, Long messageId);
 

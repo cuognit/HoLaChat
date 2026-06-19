@@ -1,3 +1,7 @@
+﻿/**
+ * File: IncomingCallBanner.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useEffect, useRef } from "react";
 import { useCall } from "../context/CallContext";
 import { Phone, PhoneOff, Video } from "lucide-react";

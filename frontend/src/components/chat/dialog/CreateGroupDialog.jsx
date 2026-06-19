@@ -1,3 +1,7 @@
+﻿/**
+ * File: CreateGroupDialog.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState, useEffect, useRef } from "react";
 import { useResponsive } from '../../../hooks/useResponsive';
 import { X, ChevronLeft, Search, Users2, Check, Camera, Loader2, UserPlus } from "lucide-react";

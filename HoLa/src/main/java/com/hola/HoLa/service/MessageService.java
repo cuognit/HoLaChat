@@ -24,6 +24,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho MessageService.
+ */
 public class MessageService {
     @Autowired
     private ChatRoomService chatRoomService;

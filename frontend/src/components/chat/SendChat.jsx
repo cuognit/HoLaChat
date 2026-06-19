@@ -1,3 +1,7 @@
+﻿/**
+ * File: SendChat.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import {

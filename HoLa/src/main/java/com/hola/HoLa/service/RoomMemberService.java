@@ -26,6 +26,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho RoomMemberService.
+ */
 public class RoomMemberService {
 
     @Autowired

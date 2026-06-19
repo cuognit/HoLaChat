@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: CloudinaryConfig.
+ */
 public class CloudinaryConfig {
     @Value("${cloudinary.cloud-name}")
     private String cloudName;

@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.util.Map;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho CloudinaryService.
+ */
 public class CloudinaryService {
     @Autowired
     private Cloudinary cloudinary;

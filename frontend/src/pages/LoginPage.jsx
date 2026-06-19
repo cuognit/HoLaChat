@@ -1,3 +1,7 @@
+﻿/**
+ * File: LoginPage.jsx
+ * Chức năng: Các trang giao diện chính của ứng dụng.
+ */
 import { useContext, useState ,useRef} from 'react';
 import { Mail, Lock } from 'lucide-react';
 import { toast } from 'sonner';

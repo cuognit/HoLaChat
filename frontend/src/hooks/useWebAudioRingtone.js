@@ -1,3 +1,7 @@
+﻿/**
+ * File: useWebAudioRingtone.js
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useEffect, useRef } from 'react';
 
 export const useWebAudioRingtone = (isRinging, type = 'callee') => {

@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/calls")
+/**
+ * Lớp Controller xử lý các HTTP request cho CallController.
+ */
 public class CallController {
 
     @Autowired

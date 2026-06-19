@@ -1,3 +1,7 @@
+﻿/**
+ * File: axiosConfig.js
+ * Chức năng: Cấu hình và các hàm gọi API giao tiếp với Backend.
+ */
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;

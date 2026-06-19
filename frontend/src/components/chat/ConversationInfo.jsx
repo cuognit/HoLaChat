@@ -1,3 +1,7 @@
+﻿/**
+ * File: ConversationInfo.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import {
   AlarmClock,
   Users,

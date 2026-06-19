@@ -6,6 +6,10 @@ import java.time.LocalDateTime;
 import java.time.Instant;
 
 @Data
+/**
+ * Lớp DTO (Data Transfer Object) cho RoomMemberDTO.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class RoomMemberDTO {
     private Long id;
     private Long roomId;
@@ -17,3 +21,4 @@ public class RoomMemberDTO {
     private Instant lastActiveAt;
     private LocalDateTime joinedAt;
 }
+

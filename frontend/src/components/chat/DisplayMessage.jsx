@@ -1,3 +1,7 @@
+﻿/**
+ * File: DisplayMessage.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Message from "./Message";
 import { useChat } from "../../hooks/useChat";

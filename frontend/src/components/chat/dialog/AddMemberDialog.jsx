@@ -1,3 +1,7 @@
+﻿/**
+ * File: AddMemberDialog.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState, useEffect, useRef } from "react";
 import { useResponsive } from '../../../hooks/useResponsive';
 import { X, Search, Check, Loader2, UserPlus } from "lucide-react";

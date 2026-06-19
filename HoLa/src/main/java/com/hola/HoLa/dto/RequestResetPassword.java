@@ -7,8 +7,13 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Lớp DTO (Data Transfer Object) cho RequestResetPassword.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class RequestResetPassword {
     private String email;
     private String otp;
     private String newPassword;
 }
+

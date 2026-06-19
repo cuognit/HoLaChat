@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+/**
+ * Lớp DTO (Data Transfer Object) cho ResponseApi.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class ResponseApi<T> {
     private int status;
     private String message;
@@ -14,3 +18,4 @@ public class ResponseApi<T> {
 
 
 }
+

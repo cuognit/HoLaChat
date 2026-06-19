@@ -1,3 +1,7 @@
+﻿/**
+ * File: chatMessage.js
+ * Chức năng: Các hàm tiện ích dùng chung.
+ */
 export function parseApiDate(createdAt) {
   if (!createdAt) return null;
   let dateStr = createdAt.replace(" ", "T");

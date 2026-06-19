@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Lớp Repository cho CallParticipantRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface CallParticipantRepository extends JpaRepository<CallParticipant, Long> {
     
     @Query("SELECT cp FROM CallParticipant cp WHERE cp.callSession.id = :sessionId AND cp.leftAt IS NULL")

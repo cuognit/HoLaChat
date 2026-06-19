@@ -19,6 +19,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/chat-rooms")
+/**
+ * Lớp Controller xử lý các HTTP request cho ChatRoomController.
+ */
 public class ChatRoomController {
 
     @Autowired

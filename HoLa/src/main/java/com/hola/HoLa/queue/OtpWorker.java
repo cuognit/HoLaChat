@@ -15,6 +15,9 @@ import java.util.concurrent.Executors;
 import org.redisson.api.RBlockingQueue;
 
 @Component
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: OtpWorker.
+ */
 public class OtpWorker {
 
     @Autowired

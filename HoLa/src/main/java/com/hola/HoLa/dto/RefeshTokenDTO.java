@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+/**
+ * Lớp DTO (Data Transfer Object) cho RefeshTokenDTO.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class RefeshTokenDTO {
     private Long userId;
     private String refreshToken; 
@@ -20,3 +24,4 @@ public class RefeshTokenDTO {
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 }
+

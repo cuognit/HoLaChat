@@ -1,3 +1,7 @@
+﻿/**
+ * File: HeaderChat.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useRef } from "react";
 import { Search, Phone, Video, PanelRight, ArrowLeft } from "lucide-react";
 import HeaderChatUser from "./HeaderChatUser";

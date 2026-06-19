@@ -1,3 +1,7 @@
+﻿/**
+ * File: JoinGroupPage.jsx
+ * Chức năng: Các trang giao diện chính của ứng dụng.
+ */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Users2, Loader2, MessageSquare, ArrowLeft, ShieldAlert } from "lucide-react";

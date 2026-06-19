@@ -6,6 +6,10 @@ import lombok.Data;
 
 @Data
 @Builder
+/**
+ * Lớp DTO (Data Transfer Object) cho CallResponse.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class CallResponse {
     private Long sessionId;
     private CallStatus status;
@@ -14,3 +18,4 @@ public class CallResponse {
     private UserDTO callerInfo;
     private String callType;
 }
+

@@ -1,3 +1,7 @@
+﻿/**
+ * File: profileService.js
+ * Chức năng: Các service xử lý logic gọi API và Socket.
+ */
 import api from "../api/axiosConfig";
 import axios from "axios"; 
 import { compressImage } from "../utils/imageCompressor";

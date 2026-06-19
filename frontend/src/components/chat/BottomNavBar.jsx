@@ -1,3 +1,7 @@
+﻿/**
+ * File: BottomNavBar.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { MessageSquare, Settings } from "lucide-react";
 
 /**

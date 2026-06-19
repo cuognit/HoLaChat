@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho MessageReactionService.
+ */
 public class MessageReactionService {
 
     @Autowired

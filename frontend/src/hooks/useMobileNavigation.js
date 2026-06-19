@@ -1,3 +1,7 @@
+﻿/**
+ * File: useMobileNavigation.js
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useState, useCallback, useRef, useEffect } from 'react';
 
 /**

@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+/**
+ * Lớp đại diện cho người tham gia vào một cuộc gọi.
+ * Ánh xạ với bảng "call_participants" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "call_participants")
 @Data

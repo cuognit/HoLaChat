@@ -1,3 +1,7 @@
+﻿/**
+ * File: useRelativeTime.js
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useState, useEffect } from "react";
 import { formatRelativeTime } from "../utils/timeUtils";
 

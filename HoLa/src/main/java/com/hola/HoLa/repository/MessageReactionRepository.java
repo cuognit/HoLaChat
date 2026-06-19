@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Lớp Repository cho MessageReactionRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface MessageReactionRepository extends JpaRepository<MessageReaction, Long> {
     Optional<MessageReaction> findByMessageIdAndUserId(Long messageId, Long userId);
     List<MessageReaction> findByMessageId(Long messageId);

@@ -1,3 +1,7 @@
+﻿/**
+ * File: ReactionSummary.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React from "react";
 
 export default function ReactionSummary({ reactions, onClick }) {

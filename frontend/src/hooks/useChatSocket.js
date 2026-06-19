@@ -1,3 +1,7 @@
+﻿/**
+ * File: useChatSocket.js
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
     activateChatSocket,

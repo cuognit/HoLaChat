@@ -24,6 +24,9 @@ import java.util.stream.Collectors;
 import com.hola.HoLa.dto.RecallMessageRequest;
 
 @Controller
+/**
+ * Lớp Controller xử lý các HTTP request cho MessageController.
+ */
 public class MessageController {
     @Autowired
     private MessageService messageService;

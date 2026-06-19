@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+/**
+ * Lớp Repository cho FriendshipRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface FriendshipRepository extends JpaRepository<Friendship, Long> {
     Optional<Friendship> findBySenderIdAndReceiverId(Long senderId, Long receiverId);
 

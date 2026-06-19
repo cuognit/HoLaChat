@@ -1,3 +1,7 @@
+﻿/**
+ * File: ImageLightbox.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 

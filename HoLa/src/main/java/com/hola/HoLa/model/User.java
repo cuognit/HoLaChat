@@ -11,6 +11,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Lớp đại diện cho người dùng (User) trong hệ thống.
+ * Ánh xạ với bảng "users" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "users")
 @Data

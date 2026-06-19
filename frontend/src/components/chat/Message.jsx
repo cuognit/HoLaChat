@@ -1,3 +1,7 @@
+﻿/**
+ * File: Message.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState, useRef, useCallback } from "react";
 import {
   CheckCircle2,

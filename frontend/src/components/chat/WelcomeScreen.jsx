@@ -1,3 +1,7 @@
+﻿/**
+ * File: WelcomeScreen.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import image1 from "../../assets/image1.png";

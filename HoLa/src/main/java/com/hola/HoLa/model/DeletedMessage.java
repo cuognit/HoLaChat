@@ -5,6 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Lớp đại diện cho các tin nhắn đã bị người dùng xóa (xóa ở phía họ, không phải thu hồi).
+ * Ánh xạ với bảng "deleted_messages" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "deleted_messages", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "message_id"})

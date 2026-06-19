@@ -1,3 +1,7 @@
+﻿/**
+ * File: NotFound.jsx
+ * Chức năng: Các trang giao diện chính của ứng dụng.
+ */
 export default function NotFound() {
     return (
         <>

@@ -8,6 +8,9 @@ import org.redisson.api.RBlockingQueue;
 import org.redisson.api.RedissonClient;
 
 @Service
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: OtpQueueProducer.
+ */
 public class OtpQueueProducer {
 
     @Autowired

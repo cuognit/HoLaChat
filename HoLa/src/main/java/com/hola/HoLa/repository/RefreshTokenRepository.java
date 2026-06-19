@@ -9,6 +9,10 @@ import com.hola.HoLa.model.RefreshToken;
 import jakarta.transaction.Transactional;
 
 @Repository
+/**
+ * Lớp Repository cho RefreshTokenRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long>{    
     public Optional<RefreshToken> findByUserEmail(String email);
     public Optional<RefreshToken> findByRefreshToken(String refreshToken);

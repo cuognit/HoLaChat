@@ -16,6 +16,9 @@ import com.hola.HoLa.service.DeviceTokenService;
 
 @RestController
 @RequestMapping("/api/device-token")
+/**
+ * Lớp Controller xử lý các HTTP request cho DeviceTokenController.
+ */
 public class DeviceTokenController {
 
     @Autowired

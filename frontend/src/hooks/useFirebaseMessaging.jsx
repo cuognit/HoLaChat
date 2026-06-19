@@ -1,3 +1,7 @@
+﻿/**
+ * File: useFirebaseMessaging.jsx
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useEffect, useState } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { messaging } from '../config/firebase';

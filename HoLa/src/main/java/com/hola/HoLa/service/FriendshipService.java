@@ -16,6 +16,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho FriendshipService.
+ */
 public class FriendshipService {
     @Autowired
     private FriendshipRepository friendshipRepository;

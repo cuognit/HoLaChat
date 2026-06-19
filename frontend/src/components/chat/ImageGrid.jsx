@@ -1,3 +1,7 @@
+﻿/**
+ * File: ImageGrid.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState } from 'react';
 import ImageLightbox from './ImageLightbox';
 

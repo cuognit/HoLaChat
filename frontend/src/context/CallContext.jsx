@@ -1,3 +1,7 @@
+﻿/**
+ * File: CallContext.jsx
+ * Chức năng: Quản lý state toàn cục (Context API) của ứng dụng.
+ */
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { getActiveCall, acceptCall, rejectCall, endCall, cancelCall, leaveCall } from "../api/callApi";
 import { subscribeToDestination, getChatSocketClient } from "../services/chatSocket";

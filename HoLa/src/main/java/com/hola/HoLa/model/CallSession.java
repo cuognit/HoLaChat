@@ -8,6 +8,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 
+/**
+ * Lớp đại diện cho một phiên gọi video/audio (Call Session).
+ * Ánh xạ với bảng "call_sessions" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "call_sessions",
        indexes = {

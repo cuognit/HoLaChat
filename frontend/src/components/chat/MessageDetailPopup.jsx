@@ -1,3 +1,7 @@
+﻿/**
+ * File: MessageDetailPopup.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { X, User, Clock, MessageSquare, FileType } from "lucide-react";
 
 export default function MessageDetailPopup({ isOpen, onClose, message }) {

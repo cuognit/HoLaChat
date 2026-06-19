@@ -3,6 +3,10 @@ package com.hola.HoLa.dto;
 import lombok.Data;
 
 @Data
+/**
+ * Lớp DTO (Data Transfer Object) cho PrivateMessageRequest.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class PrivateMessageRequest {
     private Long roomId;
     private Long senderId;
@@ -12,3 +16,4 @@ public class PrivateMessageRequest {
     private Long replyToId;
     private Boolean forwarded = false;
 }
+

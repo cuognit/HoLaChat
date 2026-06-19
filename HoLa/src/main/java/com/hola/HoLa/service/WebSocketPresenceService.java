@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho WebSocketPresenceService.
+ */
 public class WebSocketPresenceService {
     private static final Logger log = LoggerFactory.getLogger(WebSocketPresenceService.class);
     

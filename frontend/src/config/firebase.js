@@ -1,3 +1,7 @@
+﻿/**
+ * File: firebase.js
+ * Chức năng: Các cấu hình của ứng dụng (ví dụ: Firebase).
+ */
 import { initializeApp } from "firebase/app";
 import { getMessaging } from "firebase/messaging";
 

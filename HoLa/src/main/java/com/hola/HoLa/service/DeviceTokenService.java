@@ -10,6 +10,9 @@ import com.hola.HoLa.repository.DeviceTokenRepository;
 import com.hola.HoLa.repository.UserRepository;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho DeviceTokenService.
+ */
 public class DeviceTokenService {
 
     @Autowired

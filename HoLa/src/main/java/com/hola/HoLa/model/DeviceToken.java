@@ -9,6 +9,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Lớp lưu trữ token của thiết bị (dùng cho Push Notification).
+ * Ánh xạ với bảng "device_tokens" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "device_tokens")
 @Data

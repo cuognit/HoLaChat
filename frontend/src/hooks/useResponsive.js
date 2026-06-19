@@ -1,3 +1,7 @@
+﻿/**
+ * File: useResponsive.js
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useState, useEffect } from 'react';
 
 const MOBILE_BREAKPOINT = 768;

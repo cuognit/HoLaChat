@@ -10,6 +10,10 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 @Repository
+/**
+ * Lớp Repository cho MessageRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByRoomIdOrderByIdAsc(Long roomId);
     Optional<Message> findFirstByRoomIdOrderByIdDesc(Long roomId);

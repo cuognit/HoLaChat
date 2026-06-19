@@ -11,6 +11,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
+/**
+ * Lớp Repository cho RoomMemberRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface RoomMemberRepository extends JpaRepository<RoomMember, Long> {
     @Query("""
         SELECT rm.room

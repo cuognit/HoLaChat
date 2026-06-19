@@ -1,3 +1,7 @@
+/**
+ * File: useRoomList.js
+ * Chức năng: Các custom hook dùng chung cho logic React.
+ */
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, matchPath } from "react-router-dom";
 import api from '../api/axiosConfig';
@@ -63,6 +67,29 @@ export function normalizeChatRoom(rawRoom, currentUserId, currentUserName) {
     };
 }
 
+/**
+ * So sánh chặt chẽ 2 object room có phải cùng một phòng không.
+ * Ưu tiên: roomId > id > targetUserId, có guard null để tránh null === null.
+ */
+function isSameRoom(a, b) {
+    if (!a || !b) return false;
+    // 1. Ưu tiên match bằng roomId (unique, đáng tin nhất)
+    if (a.roomId != null && b.roomId != null && a.roomId > 0 && b.roomId > 0) {
+        return String(a.roomId) === String(b.roomId);
+    }
+    // 2. Match bằng id (DB id của room)
+    if (a.id != null && b.id != null && a.id > 0 && b.id > 0) {
+        return String(a.id) === String(b.id);
+    }
+    // 3. Fallback: targetUserId — chỉ khi CẢ HAI đều không có roomId/id hợp lệ (temp room)
+    const aHasKey = (a.roomId != null && a.roomId > 0) || (a.id != null && a.id > 0);
+    const bHasKey = (b.roomId != null && b.roomId > 0) || (b.id != null && b.id > 0);
+    if (!aHasKey && !bHasKey && a.targetUserId && b.targetUserId) {
+        return String(a.targetUserId) === String(b.targetUserId);
+    }
+    return false;
+}
+
 export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUserStatus, updateTypingUser, isConnected, subscribe, publish) {
     const [users, setUsers] = useState([]);
     const prevSelectedRoomIdRef = useRef(null);
@@ -111,7 +138,7 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
     useEffect(() => {
         if (!selectedUser) return;
         setUsers(prevUsers => prevUsers.map(user =>
-            (user.roomId === selectedUser.roomId || user.id === selectedUser.id || user.targetUserId === selectedUser.id || user.targetUserId === selectedUser.targetUserId)
+            isSameRoom(user, selectedUser)
                 ? {
                     ...user,
                     lastMessage: selectedUser.lastMessage ?? user.lastMessage,
@@ -275,11 +302,7 @@ export function useRoomList(currentUser, selectedUser, setSelectedUser, updateUs
                 setSelectedUser(prevSelected => {
                     // KHÔNG đè lên selectedUser nếu incoming là lời mời kết bạn (id âm)
                     if (normalizedRoom.id < 0) return prevSelected;
-                    if (prevSelected && (
-                        String(prevSelected.id) === String(normalizedRoom.id) ||
-                        (prevSelected.roomId && normalizedRoom.roomId && String(prevSelected.roomId) === String(normalizedRoom.roomId)) ||
-                        (prevSelected.targetUserId && normalizedRoom.targetUserId && String(prevSelected.targetUserId) === String(normalizedRoom.targetUserId))
-                    )) {
+                    if (prevSelected && isSameRoom(prevSelected, normalizedRoom)) {
                         const finalRoomId = (typeof normalizedRoom.roomId === 'number' && normalizedRoom.roomId > 0)
                             ? normalizedRoom.roomId : (prevSelected.roomId || null);
                         return { ...prevSelected, ...normalizedRoom, roomId: finalRoomId, messages: prevSelected.messages, seenByUsers: prevSelected.seenByUsers ?? [] };

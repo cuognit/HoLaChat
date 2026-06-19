@@ -14,6 +14,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 @Configuration
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: FirebaseAdminConfig.
+ */
 public class FirebaseAdminConfig {
 
     @Value("${firebase.service-account-path}")

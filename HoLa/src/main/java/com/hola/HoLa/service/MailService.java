@@ -6,6 +6,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho MailService.
+ */
 public class MailService {
 
     @Autowired

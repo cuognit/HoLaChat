@@ -1,3 +1,7 @@
+﻿/**
+ * File: DialogWindow.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useImperativeHandle } from 'react';
 import { useRef } from 'react';
 import { X } from 'lucide-react'

@@ -32,6 +32,9 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/auth")
+/**
+ * Lớp Controller xử lý các HTTP request cho UserController.
+ */
 public class UserController {
     @Autowired
     private UserService userService;

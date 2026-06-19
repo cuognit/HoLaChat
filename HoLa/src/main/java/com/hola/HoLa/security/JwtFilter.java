@@ -13,6 +13,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: JwtFilter.
+ */
 public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired

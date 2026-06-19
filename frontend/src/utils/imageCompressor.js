@@ -1,3 +1,7 @@
+﻿/**
+ * File: imageCompressor.js
+ * Chức năng: Các hàm tiện ích dùng chung.
+ */
 /**
  * Nén ảnh phía Client-side sử dụng HTML5 Canvas API
  * @param {File} file - Đối tượng File ảnh gốc

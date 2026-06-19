@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho PushNotificationService.
+ */
 public class PushNotificationService {
 
     @Autowired

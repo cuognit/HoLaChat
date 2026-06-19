@@ -1,3 +1,7 @@
+﻿/**
+ * File: callApi.js
+ * Chức năng: Cấu hình và các hàm gọi API giao tiếp với Backend.
+ */
 import axiosInstance from "./axiosConfig";
 
 export const initiateCall = async (calleeId, roomId, callType = "AUDIO") => {

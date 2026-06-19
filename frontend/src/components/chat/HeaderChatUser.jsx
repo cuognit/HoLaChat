@@ -1,3 +1,7 @@
+﻿/**
+ * File: HeaderChatUser.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { Dot } from "lucide-react";
 import image6 from "../../assets/image6.png";
 import { useRelativeTime } from "../../hooks/useRelativeTime";

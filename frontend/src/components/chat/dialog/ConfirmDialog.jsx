@@ -1,3 +1,7 @@
+﻿/**
+ * File: ConfirmDialog.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { AlertTriangle, Trash2, LogOut, X } from 'lucide-react';
 import { useResponsive } from '../../../hooks/useResponsive';
 

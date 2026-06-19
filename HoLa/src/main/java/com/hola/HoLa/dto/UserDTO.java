@@ -5,6 +5,10 @@ import java.time.LocalDate;
 import java.time.Instant;
 
 @Data
+/**
+ * Lớp DTO (Data Transfer Object) cho UserDTO.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class UserDTO {
     private Long id;
     
@@ -23,3 +27,4 @@ public class UserDTO {
     private Instant lastActiveAt;
     private Boolean isVerified;
 }
+

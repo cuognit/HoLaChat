@@ -1,3 +1,7 @@
+﻿/**
+ * File: TypingIndicator.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useChat } from "../../hooks/useChat";
 
 export default function TypingIndicator() {

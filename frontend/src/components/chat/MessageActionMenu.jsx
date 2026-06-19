@@ -1,3 +1,7 @@
+﻿/**
+ * File: MessageActionMenu.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useEffect, useRef, useState } from "react";
 import { Copy, Info, Trash2, RotateCcw, Quote, Forward } from "lucide-react";
 

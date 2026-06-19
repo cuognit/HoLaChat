@@ -1,3 +1,7 @@
+﻿/**
+ * File: HomePage.jsx
+ * Chức năng: Các trang giao diện chính của ứng dụng.
+ */
 import React, { useEffect, useState, useCallback } from 'react';
 import LeftSidebar from '../components/chat/LeftSidebar';
 import MainChat from '../components/chat/MainChat';

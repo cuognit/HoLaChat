@@ -1,3 +1,7 @@
+﻿/**
+ * File: ActiveCallWidget.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useState, useEffect, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { useCall } from "../context/CallContext";

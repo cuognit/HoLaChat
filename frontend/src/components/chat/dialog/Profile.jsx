@@ -1,3 +1,7 @@
+﻿/**
+ * File: Profile.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useState, useEffect, useRef } from "react";
 import { useResponsive } from '../../../hooks/useResponsive';
 import { Camera, Pencil, X, Check, Loader2 } from "lucide-react";

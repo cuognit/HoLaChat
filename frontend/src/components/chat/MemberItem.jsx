@@ -1,3 +1,7 @@
+﻿/**
+ * File: MemberItem.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState, useRef, useEffect } from "react";
 import { MoreHorizontal, Crown, UserMinus, ShieldCheck, ShieldOff, Info } from "lucide-react";
 import { useChat } from "../../hooks/useChat";

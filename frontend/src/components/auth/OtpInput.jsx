@@ -1,3 +1,7 @@
+﻿/**
+ * File: OtpInput.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldCheck,Loader2 } from 'lucide-react';
 import { useImperativeHandle } from 'react';

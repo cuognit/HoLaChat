@@ -1,3 +1,7 @@
+﻿/**
+ * File: MainChat.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import HeaderChat from "./HeaderChat";
 import SendChat from "./SendChat";
 import DisplayMessage from "./DisplayMessage";

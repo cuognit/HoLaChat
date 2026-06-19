@@ -9,6 +9,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Lớp đại diện cho tin nhắn (Message) trong phòng chat.
+ * Ánh xạ với bảng "messages" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "messages")
 @Data

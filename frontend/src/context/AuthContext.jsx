@@ -1,3 +1,7 @@
+﻿/**
+ * File: AuthContext.jsx
+ * Chức năng: Quản lý state toàn cục (Context API) của ứng dụng.
+ */
 import { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContextInstance.js";
 import { setAuthToken } from "../api/axiosConfig";

@@ -9,6 +9,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Lớp đại diện cho thành viên trong một phòng chat.
+ * Ánh xạ với bảng "room_members" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "room_members")
 @Data

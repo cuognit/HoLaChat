@@ -1,3 +1,7 @@
+﻿/**
+ * File: ChatContext.jsx
+ * Chức năng: Quản lý state toàn cục (Context API) của ứng dụng.
+ */
 import { useState, useCallback } from 'react';
 import { ChatContext } from './chatContextInstance';
 

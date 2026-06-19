@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 
 @Component
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: TokenCleanupScheduler.
+ */
 public class TokenCleanupScheduler {
     private static final Logger log = LoggerFactory.getLogger(TokenCleanupScheduler.class);
 

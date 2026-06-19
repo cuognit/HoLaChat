@@ -20,6 +20,9 @@ import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: SecurityConfig.
+ */
 public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;

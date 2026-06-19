@@ -1,3 +1,7 @@
+﻿/**
+ * File: userService.js
+ * Chức năng: Các service xử lý logic gọi API và Socket.
+ */
 import api from "../api/axiosConfig";
 
 export async function searchUsers(email) {

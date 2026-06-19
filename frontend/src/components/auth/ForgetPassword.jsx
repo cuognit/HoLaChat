@@ -1,3 +1,7 @@
+﻿/**
+ * File: ForgetPassword.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useState } from 'react';
 import { Mail, Lock, KeyRound, CheckCircle2, ArrowRight, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import api from '../../api/axiosConfig';

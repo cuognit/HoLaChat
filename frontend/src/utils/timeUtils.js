@@ -1,3 +1,7 @@
+﻿/**
+ * File: timeUtils.js
+ * Chức năng: Các hàm tiện ích dùng chung.
+ */
 export const parseApiDate = (time) => {
   if (!time) return null;
   if (time instanceof Date) return time;

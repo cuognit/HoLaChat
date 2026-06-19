@@ -10,6 +10,10 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Lớp Repository cho CallSessionRepository.
+ * Chịu trách nhiệm giao tiếp với cơ sở dữ liệu.
+ */
 public interface CallSessionRepository extends JpaRepository<CallSession, Long> {
 
     @Query("SELECT count(c) > 0 FROM CallSession c WHERE c.status IN ('RINGING', 'ACTIVE') AND (" +

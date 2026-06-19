@@ -1,3 +1,7 @@
+﻿/**
+ * File: LeftSidebar.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { Search, UserPlus, Users2, MessageSquare, Contact, Cloud, Folder, SquareCheck, Briefcase, Settings, ChevronDown, MoreHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ItemUser from "./ItemUser";

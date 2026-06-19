@@ -15,6 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/messages")
+/**
+ * Lớp Controller xử lý các HTTP request cho MessageRestController.
+ */
 public class MessageRestController {
     @Autowired
     private MessageService messageService;

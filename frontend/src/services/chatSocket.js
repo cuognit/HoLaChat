@@ -1,3 +1,7 @@
+﻿/**
+ * File: chatSocket.js
+ * Chức năng: Các service xử lý logic gọi API và Socket.
+ */
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
 import { getAuthToken } from "../api/axiosConfig";

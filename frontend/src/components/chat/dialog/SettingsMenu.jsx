@@ -1,3 +1,7 @@
+﻿/**
+ * File: SettingsMenu.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { User, Settings, Database, Globe, HelpCircle, ChevronRight } from "lucide-react";
 import { useResponsive } from '../../../hooks/useResponsive';
 

@@ -1,3 +1,7 @@
+﻿/**
+ * File: FriendProfile.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React, { useState, useEffect } from "react";
 import { useResponsive } from '../../../hooks/useResponsive';
 import {

@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.TimeUnit;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho OtpService.
+ */
 public class OtpService {
 
     @Autowired

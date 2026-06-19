@@ -1,3 +1,7 @@
+﻿/**
+ * File: ReactionDetailModal.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import React from "react";
 import { X } from "lucide-react";
 

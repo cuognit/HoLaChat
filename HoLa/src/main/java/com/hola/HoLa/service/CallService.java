@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho CallService.
+ */
 public class CallService {
 
     @Autowired

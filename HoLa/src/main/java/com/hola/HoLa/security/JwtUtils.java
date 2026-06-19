@@ -11,6 +11,9 @@ import java.util.Date;
 import java.util.UUID;
 
 @Component
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: JwtUtils.
+ */
 public class JwtUtils {
 
     @Value("${JWT_SECRET}")

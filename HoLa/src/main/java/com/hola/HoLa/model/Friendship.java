@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.UpdateTimestamp;
 
+/**
+ * Lớp đại diện cho mối quan hệ bạn bè (kết bạn) giữa hai người dùng.
+ * Ánh xạ với bảng "friendships" trong cơ sở dữ liệu.
+ */
 @Entity
 @Table(name = "friendships", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"sender_id", "receiver_id"})

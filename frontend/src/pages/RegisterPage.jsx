@@ -1,3 +1,7 @@
+﻿/**
+ * File: RegisterPage.jsx
+ * Chức năng: Các trang giao diện chính của ứng dụng.
+ */
 import React, { useState, useRef, useEffect} from 'react';
 import { Mail, Lock,User } from 'lucide-react';
 import OutInput from '../components/auth/OtpInput';

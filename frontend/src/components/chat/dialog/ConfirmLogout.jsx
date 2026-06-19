@@ -1,3 +1,7 @@
+﻿/**
+ * File: ConfirmLogout.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useNavigate } from "react-router-dom";
 import { useResponsive } from '../../../hooks/useResponsive';
 import { toast } from "sonner";

@@ -6,6 +6,10 @@ import lombok.Data;
 
 @Data
 @Builder
+/**
+ * Lớp DTO (Data Transfer Object) cho ActiveCallResponse.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class ActiveCallResponse {
     private Long sessionId;
     private CallStatus status;
@@ -16,3 +20,4 @@ public class ActiveCallResponse {
     private UserDTO otherPartyInfo;
     private String callType;
 }
+

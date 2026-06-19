@@ -1,3 +1,7 @@
+﻿/**
+ * File: ProtectedRoute.jsx
+ * Chức năng: Cấu hình điều hướng (routing) của ứng dụng.
+ */
 import { Navigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContextInstance.js';
 import { useContext } from 'react';

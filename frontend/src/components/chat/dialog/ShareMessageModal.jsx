@@ -1,3 +1,7 @@
+﻿/**
+ * File: ShareMessageModal.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useState, useEffect, useMemo } from "react";
 import { useResponsive } from '../../../hooks/useResponsive';
 import { Search, X, Check, FileText, Phone } from "lucide-react";

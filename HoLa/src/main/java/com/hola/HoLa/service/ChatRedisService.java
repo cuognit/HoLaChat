@@ -12,6 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
+/**
+ * Lớp Service chứa logic nghiệp vụ cho ChatRedisService.
+ */
 public class ChatRedisService {
 
     @Autowired

@@ -19,6 +19,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/rooms")
+/**
+ * Lớp Controller xử lý các HTTP request cho RoomMemberController.
+ */
 public class RoomMemberController {
 
     @Autowired

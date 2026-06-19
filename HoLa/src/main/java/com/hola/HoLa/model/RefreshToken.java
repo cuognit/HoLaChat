@@ -18,6 +18,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Lớp lưu trữ Refresh Token để cấp lại Access Token khi hết hạn (quản lý phiên đăng nhập).
+ * Ánh xạ với bảng "refresh_token" trong cơ sở dữ liệu.
+ */
 @Entity
 @Data
 @NoArgsConstructor

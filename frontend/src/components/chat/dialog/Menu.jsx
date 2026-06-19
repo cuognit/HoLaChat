@@ -1,3 +1,7 @@
+﻿/**
+ * File: Menu.jsx
+ * Chức năng: Thành phần giao diện (UI component) của ứng dụng.
+ */
 import { useResponsive } from '../../../hooks/useResponsive';
 
 export default function Menu({ userName, email, avatarUrl, openProfile, openLogout, closeMenu }) {

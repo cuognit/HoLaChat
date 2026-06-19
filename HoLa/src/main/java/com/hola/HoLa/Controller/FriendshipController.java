@@ -16,6 +16,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/friendships")
+/**
+ * Lớp Controller xử lý các HTTP request cho FriendshipController.
+ */
 public class FriendshipController {
     @Autowired
     private FriendshipService friendshipService;

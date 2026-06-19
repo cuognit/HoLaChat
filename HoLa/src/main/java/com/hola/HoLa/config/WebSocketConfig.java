@@ -10,6 +10,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+/**
+ * Lớp cấu hình / tiện ích / bảo mật: WebSocketConfig.
+ */
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Autowired
     private WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;

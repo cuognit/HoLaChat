@@ -4,6 +4,10 @@ import lombok.Data;
 import java.time.Instant;
 
 @Data
+/**
+ * Lớp DTO (Data Transfer Object) cho ChatRoomDTO.
+ * Dùng để truyền tải dữ liệu giữa Client và Server.
+ */
 public class ChatRoomDTO {
     private Long id;
     private String roomName;
@@ -20,7 +24,7 @@ public class ChatRoomDTO {
     private Integer unreadCount;
     private Boolean isLastMessageSeen;
 
-    // Thuộc tính phục vụ Real-time Friend Request
+    // Thuộc tính phụ vụ Real-time Friend Request
     private String friendshipStatus;
     private Long friendshipSenderId;
 
@@ -30,7 +34,7 @@ public class ChatRoomDTO {
 
     // Last message metadata
     private String lastMessageType;   // TEXT | IMAGE | FILE | SYSTEM
-    private String lastSenderName;    // Tên người gửi tin cuối (cho group)
+    private String lastSenderName;    // Tên người gửi tin cuố  i (cho group)
 
     // Danh sách người đã xem tin nhắn cuối (avatar seen indicator)
     private java.util.List<com.hola.HoLa.dto.SeenUserDTO> seenByUsers;
